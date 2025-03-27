@@ -30,10 +30,10 @@
 }
 ```
 
-### Исходящее сообщение (`output-messages` топик)
+### Исходящее сообщение (`output-messages` топик) (важное замечание, `messageId` это `id` из сообщения выше)
 ```json
 {
-  "messageId": "uuid-string",
+  "messageId": "uuid-string" ,
   "status": "PROCESSED",
   "processedAt": "2023-01-01T12:01:00Z"
 }
@@ -51,7 +51,7 @@
 
 1. Запустите инфраструктурные компоненты:
    ```bash
-   docker compose up postgres kafka zookeeper kafka-setup
+   docker compose up -d
    ```
 
 ## Тестирование
@@ -62,18 +62,16 @@
 
 ```bash
 # Запуск консольного продюсера
-docker exec -it kafka kafka-console-producer --broker-list kafka:9092 --topic input-messages
-
+docker exec -it kafka bash
+kafka-topics --create --topic input-messages --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+kafka-console-producer --topic input-messages --bootstrap-server kafka:9092
 # Затем введите JSON сообщение:
 {"id":"123e4567-e89b-12d3-a456-426614174001","content":"Тестовое сообщение 1","timestamp":"2023-01-01T12:00:00Z"}
 ```
 
 ### Просмотр отправленных сообщений
 
-```bash
-# Подписка на топик output-messages
-docker exec -it kafka kafka-console-consumer --bootstrap-server kafka:9092 --topic output-messages --from-beginning
-```
+На порту 8080 вашего компьютера будет UI для просмотра сообщений в Kafka
 
 ### Проверка базы данных
 
@@ -84,6 +82,20 @@ docker exec -it postgres psql -U user -d messagedb
 # SQL запрос для просмотра сохраненных сообщений
 SELECT * FROM messages;
 ```
+
+## Требования к проекту
+
+- Код должен быть размещен в GitHub репозитории 
+- Должен присутствовать файл README.md с инструкциями по запуску
+- В корне проекта должен быть файл docker-compose.yml, который поднимает:
+
+- - PostgreSQL
+- - Zookeeper
+- - Kafka с предварительно созданными топиками input-messages и output-messages
+- - Сам микросервис
+
+- Проект должен запускаться командой `docker compose up`
+- Покрытие кода unit-тестами будет преимуществом
 
 ## Особенности реализации
 
