@@ -43,6 +43,23 @@ services:
     networks:
       - kafka-network
 
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - kafka-network
+
 networks:
   kafka-network:
     driver: bridge
+
+volumes:
+  postgres-data:
