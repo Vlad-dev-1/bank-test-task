@@ -136,7 +136,7 @@ docker exec -it kafka bash
 kafka-console-consumer --topic output-messages --bootstrap-server kafka:9092 --from-beginning
 ```
 
-Ну или просто зайти в UI Kafka, по дефолту он на 8080 порту
+Ну или просто зайти в UI Kafka, по дефолту он на 8081 порту
 
 ### Проверка базы данных
 
