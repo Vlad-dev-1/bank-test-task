@@ -8,8 +8,10 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     application
-    id("org.springframework.boot") version "3.2.3"
+    id("org.springframework.boot") version "3.1.5"
     id("io.spring.dependency-management") version "1.1.4"
+    alias(libs.plugins.lombok.plugin)
+
 }
 
 repositories {
@@ -26,25 +28,48 @@ dependencies {
     // This dependency is used by the application.
     implementation(libs.guava)
 
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
+
+    testCompileOnly(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
+
+    implementation(libs.mapstruct)
+    annotationProcessor(libs.mapstruct.processor)
+
+    annotationProcessor(libs.lombok.mapstruct.binding)
+
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
     runtimeOnly("org.postgresql:postgresql")
+
+
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
 
 application {
     // Define the main class for the application.
-    mainClass = "org.example.App"
+    mainClass = "com.example.MessageAppApplication"
 }
 
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 }
+
+tasks.withType<JavaCompile> {
+    options.compilerArgs.addAll(
+        listOf(
+            "-Amapstruct.suppressGeneratorTimestamp=true",
+            "-Amapstruct.defaultComponentModel=spring"
+        )
+    )
+}
+
