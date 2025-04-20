@@ -3,11 +3,11 @@ package com.example.messagingapp.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "messages")
+@Table(name = "message_info", schema = "public")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -27,16 +27,10 @@ public class Message {
     @Column(name = "status_message")
     private MessageStatus status;
 
-    @Column(name = "message_time", columnDefinition = "VARCHAR(50)")
-    private String timestampToString;
+    @Column(name = "message_time", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    private Instant timestamp;
 
-    @Column(name = "message_time_status_changed", columnDefinition = "VARCHAR(50)")
-    private String processedAtToString;
-
-    @Transient
-    private OffsetDateTime timestamp;
-
-    @Transient
-    private OffsetDateTime processedAt;
+    @Column(name = "message_time_status_changed", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    private Instant processedAt;
 
 }

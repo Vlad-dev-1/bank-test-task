@@ -1,17 +1,17 @@
 package com.example.messagingapp.service;
 
 
-import com.example.messagingapp.dto.MessageRequestDto;
-import com.example.messagingapp.dto.MessageResponseDto;
+import com.example.messagingapp.dto.MessageRequest;
+import com.example.messagingapp.dto.MessageResponse;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface MessageService {
 
-    MessageResponseDto saveMessage(MessageRequestDto messageRequestDto);
+    MessageResponse saveMessage(MessageRequest messageRequest);
 
-    List<MessageResponseDto> getMessages();
+    List<MessageResponse> getMessages();
 
-    MessageResponseDto getMessageByID(UUID idMessage);
+    MessageResponse getMessageByID(UUID idMessage);
 }

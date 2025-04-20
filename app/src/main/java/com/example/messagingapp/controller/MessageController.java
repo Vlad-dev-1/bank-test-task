@@ -1,7 +1,7 @@
 package com.example.messagingapp.controller;
 
-import com.example.messagingapp.dto.MessageRequestDto;
-import com.example.messagingapp.dto.MessageResponseDto;
+import com.example.messagingapp.dto.MessageRequest;
+import com.example.messagingapp.dto.MessageResponse;
 import com.example.messagingapp.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -17,17 +17,17 @@ public class MessageController {
     private final MessageService messageService;
 
     @PostMapping
-    public MessageResponseDto saveMessage(@RequestBody MessageRequestDto messageRequestDto) {
-        return messageService.saveMessage(messageRequestDto);
+    public MessageResponse saveMessage(@RequestBody MessageRequest messageRequest) {
+        return messageService.saveMessage(messageRequest);
     }
 
     @GetMapping
-    public List<MessageResponseDto> getAllMessages() {
+    public List<MessageResponse> getAllMessages() {
         return messageService.getMessages();
     }
 
     @GetMapping("/{id}")
-    public MessageResponseDto getMessageByID(@PathVariable("id") UUID messageID) {
+    public MessageResponse getMessageByID(@PathVariable("id") UUID messageID) {
         return messageService.getMessageByID(messageID);
     }
 }

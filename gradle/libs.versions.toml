@@ -4,11 +4,13 @@
 [plugins]
 lombok-plugin = { id = "io.freefair.lombok", version = "8.4" }
 
+
 [versions]
 guava = "33.3.1-jre"
 junit-jupiter = "5.11.1"
-lombok = "1.18.30"
-mapstruct = "1.6.3"
+lombok = "1.18.28"
+mapstruct = "1.5.5.Final"
+lombok-mapstruct-binding = "0.2.0"
 
 [libraries]
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
@@ -16,4 +18,4 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "jun
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
 mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
-lombok-mapstruct-binding = { module = "org.projectlombok:lombok-mapstruct-binding", version = "0.2.0" }
+lombok-mapstruct-binding = { module = "org.projectlombok:lombok-mapstruct-binding", version.ref = "lombok-mapstruct-binding" }

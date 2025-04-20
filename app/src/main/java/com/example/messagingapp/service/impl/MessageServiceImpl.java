@@ -1,21 +1,20 @@
 package com.example.messagingapp.service.impl;
 
-import com.example.messagingapp.dto.MessageRequestDto;
-import com.example.messagingapp.dto.MessageResponseDto;
+import com.example.messagingapp.dto.MessageRequest;
+import com.example.messagingapp.dto.MessageResponse;
 import com.example.messagingapp.dto.mapper.MapperMessage;
 import com.example.messagingapp.entity.Message;
 import com.example.messagingapp.entity.MessageStatus;
 import com.example.messagingapp.exception.MessageNotFound;
 import com.example.messagingapp.exception.MessageNotFoundById;
+import com.example.messagingapp.kafka.producer.KafkaMessageProducer;
 import com.example.messagingapp.repository.MessageRepository;
 import com.example.messagingapp.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -24,19 +23,19 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MessageServiceImpl implements MessageService {
 
-    private static final DateTimeFormatter DATE_TIME_FORMATTER =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(ZoneOffset.UTC);
-
     private final MessageRepository messageRepository;
 
     private final MapperMessage mapperMessage;
 
+    private final KafkaMessageProducer kafkaMessageProducer;
+
 
     @Override
     @Transactional
-    public MessageResponseDto saveMessage(MessageRequestDto messageRequestDto) {
+    public MessageResponse saveMessage(MessageRequest messageRequest) {
 
-        Message message = mapperMessage.mapperMessageRequestDto(messageRequestDto);
+        Message message = mapperMessage.mapperMessageRequestDto(messageRequest);
+        kafkaMessageProducer.sendMessageRequest(messageRequest);
         MessageStatus[] statuses = MessageStatus.values();
         Message messageByStatus = null;
 
@@ -46,28 +45,33 @@ public class MessageServiceImpl implements MessageService {
                 messageByStatus = Message.builder().id(message.getId())
                         .content(message.getContent())
                         .status(statuses[i])
-                        .timestampToString(message.getTimestampToString())
-                        .processedAtToString(OffsetDateTime.now().format(DATE_TIME_FORMATTER))
+                        .timestamp(message.getTimestamp())
+                        .processedAt(Instant.now())
                         .build();
                 messageRepository.save(messageByStatus);
-                Thread.sleep(5000);
+
+                Thread.sleep(1000);
             }
 
-            return mapperMessage.mapperMessage(messageByStatus);
+            MessageResponse messageResponse = mapperMessage.mapperMessage(messageByStatus);
+            kafkaMessageProducer.sendMessageResponse(messageResponse);
+            return messageResponse;
 
         } catch (Exception e) {
             message.setStatus(MessageStatus.FAILED);
-            message.setProcessedAtToString(OffsetDateTime.now().format(DATE_TIME_FORMATTER));
+            message.setProcessedAt(Instant.now());
             messageRepository.save(message);
-            return mapperMessage.mapperMessage(message);
+            MessageResponse messageResponse = mapperMessage.mapperMessage(message);
+            kafkaMessageProducer.sendMessageResponse(messageResponse);
+            return messageResponse;
         }
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<MessageResponseDto> getMessages() {
+    public List<MessageResponse> getMessages() {
 
-        List<MessageResponseDto> allMessage = mapperMessage.getAllMessage(messageRepository.findAll());
+        List<MessageResponse> allMessage = mapperMessage.getAllMessage(messageRepository.findAll());
         if (Objects.nonNull(allMessage)) {
             return allMessage;
         } else {
@@ -77,7 +81,7 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     @Transactional(readOnly = true)
-    public MessageResponseDto getMessageByID(UUID idMessage) {
+    public MessageResponse getMessageByID(UUID idMessage) {
         Message message = messageRepository.findById(idMessage).orElseThrow(() ->
                 new MessageNotFoundById(MessageNotFoundById.MESSAGE_NOT_FOUND_BY_ID));
         return mapperMessage.mapperMessage(message);

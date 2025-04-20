@@ -11,6 +11,7 @@ plugins {
     id("org.springframework.boot") version "3.1.5"
     id("io.spring.dependency-management") version "1.1.4"
     alias(libs.plugins.lombok.plugin)
+    id("java")
 
 }
 
@@ -40,7 +41,16 @@ dependencies {
     annotationProcessor(libs.lombok.mapstruct.binding)
 
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.kafka:spring-kafka:3.1.5")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.3")
+    implementation("org.apache.kafka:kafka-clients:3.6.0")
+    implementation("org.springframework.boot:spring-boot-configuration-processor")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.flywaydb:flyway-core")
+
+
+
+    implementation("org.springframework:spring-tx")
 
     runtimeOnly("org.postgresql:postgresql")
 
@@ -67,8 +77,8 @@ tasks.named<Test>("test") {
 tasks.withType<JavaCompile> {
     options.compilerArgs.addAll(
         listOf(
-            "-Amapstruct.suppressGeneratorTimestamp=true",
-            "-Amapstruct.defaultComponentModel=spring"
+            "-Amapstruct.defaultComponentModel=spring",
+            "-Amapstruct.suppressGeneratorTimestamp=true"
         )
     )
 }
