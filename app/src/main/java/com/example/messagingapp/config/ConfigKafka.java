@@ -40,6 +40,12 @@ public class ConfigKafka {
     @Value("${app.kafka.output-topic}")
     private String outputTopic;
 
+    @Value("${spring.kafka.consumer.group-id}")
+    private String kafkaGroupID;
+
+    @Value("${spring.kafka.consumer.auto-offset-reset}")
+    private String autoOffsetReset;
+
     // Producer Configuration
     @Bean
     public ProducerFactory<String, Object> producerFactory() {
@@ -47,7 +53,6 @@ public class ConfigKafka {
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        // Дополнительные настройки:
         configProps.put(ProducerConfig.ACKS_CONFIG, "all");
         configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
         return new DefaultKafkaProducerFactory<>(configProps);
@@ -63,8 +68,8 @@ public class ConfigKafka {
     public ConsumerFactory<String, Object> consumerFactory() {
         Map<String, Object> config = new HashMap<>();
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        config.put(ConsumerConfig.GROUP_ID_CONFIG, "message-group");
-        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaGroupID);
+        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetReset);
 
         // Настройка десериализатора ключа
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -106,7 +111,7 @@ public class ConfigKafka {
     @Bean
     public NewTopic inputTopic() {
         return TopicBuilder.name(inputTopic)
-                .partitions(1)  // Рекомендуется минимум 3 партиции
+                .partitions(1)
                 .replicas(1)
                 .build();
     }
