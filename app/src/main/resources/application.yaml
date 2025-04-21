@@ -7,6 +7,10 @@ spring:
     time-zone: UTC
   kafka:
     bootstrap-servers: ${app.kafka.bootstrap-servers}
+    listener:
+      retry:
+        interval: 1000
+        max-attempts: 3
     consumer:
       group-id: message-group
       auto-offset-reset: earliest

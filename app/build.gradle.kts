@@ -40,10 +40,12 @@ dependencies {
 
     annotationProcessor(libs.lombok.mapstruct.binding)
 
+    implementation("org.springframework.retry:spring-retry:2.0.11")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.kafka:spring-kafka:3.1.5")
+    implementation("org.apache.kafka:kafka-clients:3.6.1")
+
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.3")
-    implementation("org.apache.kafka:kafka-clients:3.6.0")
     implementation("org.springframework.boot:spring-boot-configuration-processor")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.flywaydb:flyway-core")

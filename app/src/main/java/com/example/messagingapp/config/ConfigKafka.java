@@ -1,7 +1,6 @@
 package com.example.messagingapp.config;
 
 
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -45,6 +44,12 @@ public class ConfigKafka {
 
     @Value("${spring.kafka.consumer.auto-offset-reset}")
     private String autoOffsetReset;
+
+    @Value("${spring.kafka.listener.retry.interval}")
+    private Long interval;
+
+    @Value("${spring.kafka.listener.retry.max-attempts}")
+    private Long maxAttempts;
 
     // Producer Configuration
     @Bean
@@ -97,13 +102,14 @@ public class ConfigKafka {
 
         // Настройка обработки ошибок (3 попытки с интервалом 1 секунда)
         CommonErrorHandler errorHandler = new DefaultErrorHandler(
-                (consumerRecord, exception) -> {
-                    log.error("Ошибка обработки сообщения: {}", consumerRecord.value(), exception);
-                },
-                new FixedBackOff(1000L, 3L)
+                (consumerRecord, exception) -> log.error("Ошибка обработки сообщения. Topic: {}, Key: {}, Value: {}",
+                        consumerRecord.topic(),
+                        consumerRecord.key(),
+                        consumerRecord.value(),
+                        exception),
+                new FixedBackOff(interval, maxAttempts)
         );
         factory.setCommonErrorHandler(errorHandler);
-
         return factory;
     }
 
