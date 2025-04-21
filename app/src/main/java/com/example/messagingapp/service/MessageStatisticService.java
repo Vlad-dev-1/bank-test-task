@@ -1,10 +1,10 @@
 package com.example.messagingapp.service;
 
-import com.example.messagingapp.entity.MessageStatus;
 
-import java.util.Map;
+import com.example.messagingapp.dto.MessageStatisticResponse;
+
 
 public interface MessageStatisticService {
 
-    Map<MessageStatus, Long> getMessageStatistic();
+    MessageStatisticResponse getMessageStatistic();
 }

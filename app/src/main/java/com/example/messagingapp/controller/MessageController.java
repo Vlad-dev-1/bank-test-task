@@ -2,7 +2,17 @@ package com.example.messagingapp.controller;
 
 import com.example.messagingapp.dto.MessageRequest;
 import com.example.messagingapp.dto.MessageResponse;
+import com.example.messagingapp.exception.schema.MessageNotFoundByIdSchema;
+import com.example.messagingapp.exception.schema.MessagesNotFoundSchema;
 import com.example.messagingapp.service.MessageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,22 +22,72 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/messages")
+@Tag(name = "Контроллер сообщений", description = "API для операций с сообщениями")
 public class MessageController {
 
     private final MessageService messageService;
 
+    @Operation(summary = "Создать новое сообщение", description = "Создает и сохраняет новое сообщение")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Сообщение успешно создано",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = MessageResponse.class)))})
     @PostMapping
-    public MessageResponse saveMessage(@RequestBody MessageRequest messageRequest) {
+    public MessageResponse saveMessage(@RequestBody
+                                       @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                               description = "Данные для создания сообщения",
+                                               required = true,
+                                               content = @Content(
+                                                       mediaType = "application/json",
+                                                       schema = @Schema(implementation = MessageRequest.class)))
+                                       MessageRequest messageRequest) {
         return messageService.saveMessage(messageRequest);
     }
 
+    @Operation(summary = "Получить все сообщения", description = "Возвращает список всех сообщений")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Список успешно получен",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = MessageResponse.class))))
+            ,
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Нет содержимого в базе данных",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = MessagesNotFoundSchema.class)))})
     @GetMapping
     public List<MessageResponse> getAllMessages() {
         return messageService.getMessages();
     }
 
+    @Operation(summary = "Получить сообщение по ID", description = "Возвращает конкретное сообщение по его идентификатору")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Сообщение найдено",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = MessageResponse.class)))
+            ,
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Сообщение не найдено",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = MessageNotFoundByIdSchema.class)))})
     @GetMapping("/{id}")
-    public MessageResponse getMessageByID(@PathVariable("id") UUID messageID) {
+    public MessageResponse getMessageByID(@Parameter(
+            description = "ID сообщения для поиска",
+            required = true,
+            example = "550e8400-e29b-41d4-a716-446655440000")
+                                          @PathVariable("id") UUID messageID) {
         return messageService.getMessageByID(messageID);
     }
 }

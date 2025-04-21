@@ -1,6 +1,5 @@
 package com.example.messagingapp.exception;
 
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -10,7 +9,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class RentExceptionHandler {
 
-    @ExceptionHandler({MessageNotFound.class, MessageNotFoundById.class})
+    @ExceptionHandler({MessagesNotFound.class, MessageNotFoundById.class})
     public ResponseEntity<ErrorResponceApp> handleNotFoundException(RuntimeException e) {
         return buildErrorResponseEntity(e.getMessage());
     }

@@ -5,7 +5,7 @@ import com.example.messagingapp.dto.MessageResponse;
 import com.example.messagingapp.dto.mapper.MapperMessage;
 import com.example.messagingapp.entity.Message;
 import com.example.messagingapp.entity.MessageStatus;
-import com.example.messagingapp.exception.MessageNotFound;
+import com.example.messagingapp.exception.MessagesNotFound;
 import com.example.messagingapp.exception.MessageNotFoundById;
 import com.example.messagingapp.kafka.producer.KafkaMessageProducer;
 import com.example.messagingapp.repository.MessageRepository;
@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -72,10 +71,10 @@ public class MessageServiceImpl implements MessageService {
     public List<MessageResponse> getMessages() {
 
         List<MessageResponse> allMessage = mapperMessage.getAllMessage(messageRepository.findAll());
-        if (Objects.nonNull(allMessage)) {
+        if (!allMessage.isEmpty()) {
             return allMessage;
         } else {
-            throw new MessageNotFound(MessageNotFound.MESSAGES_NOT_FOUND);
+            throw new MessagesNotFound(MessagesNotFound.MESSAGES_NOT_FOUND);
         }
     }
 
