@@ -14,11 +14,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/messages")
@@ -44,6 +46,7 @@ public class MessageController {
                                                        mediaType = "application/json",
                                                        schema = @Schema(implementation = MessageRequest.class)))
                                        MessageRequest messageRequest) {
+        log.info("Попытка создания нового сообщения");
         return messageService.saveMessage(messageRequest);
     }
 
@@ -64,6 +67,7 @@ public class MessageController {
                             schema = @Schema(implementation = MessagesNotFoundSchema.class)))})
     @GetMapping
     public List<MessageResponse> getAllMessages() {
+        log.info("Запрос на получение всех сообщений");
         return messageService.getMessages();
     }
 
@@ -88,6 +92,7 @@ public class MessageController {
             required = true,
             example = "550e8400-e29b-41d4-a716-446655440000")
                                           @PathVariable("id") UUID messageID) {
+        log.info("Поиск сообщения по ID: {}", messageID);
         return messageService.getMessageByID(messageID);
     }
 }

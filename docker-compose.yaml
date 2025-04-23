@@ -46,6 +46,7 @@ services:
   postgres:
     image: postgres:15
     container_name: postgres
+    hostname: postgres
     ports:
       - "5433:5432"
     environment:
@@ -54,6 +55,28 @@ services:
       POSTGRES_DB: postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    networks:
+      - kafka-network
+
+  app:
+    container_name: messaging-app
+    build:
+      context: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+        - postgres
+        - kafka
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_FLYWAY_URL: jdbc:postgresql://postgres:5432/postgres
+      SPRING_FLYWAY_USER: postgres
+      SPRING_FLYWAY_PASSWORD: postgres
+      SPRING_KAFKA_BOOTSTRAP-SERVERS: kafka:9092
     networks:
       - kafka-network
 

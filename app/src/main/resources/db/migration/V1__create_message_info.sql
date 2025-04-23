@@ -1,4 +1,6 @@
-create table message_info
+CREATE SCHEMA IF NOT EXISTS public;
+
+create table public.message_info
 (
     message_id                  uuid not null
         primary key,

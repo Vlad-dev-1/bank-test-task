@@ -2,14 +2,16 @@ package com.example.messagingapp.service.impl;
 
 
 import com.example.messagingapp.dto.MessageStatisticResponse;
+import com.example.messagingapp.exception.MessageStatisticResponseException;
 import com.example.messagingapp.repository.MessageRepository;
 import com.example.messagingapp.service.MessageStatisticService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.stream.Collectors;
 
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MessageStatisticServiceImpl implements MessageStatisticService {
@@ -18,12 +20,19 @@ public class MessageStatisticServiceImpl implements MessageStatisticService {
 
     @Override
     public MessageStatisticResponse getMessageStatistic() {
-        return new MessageStatisticResponse(messageRepository.
-                findAll().
-                stream().
-                collect(Collectors.toMap(message -> message.
-                                getStatus().
-                                name(),
-                count -> 1L, Long::sum)));
+        try {
+            MessageStatisticResponse messageStatisticResponse = new MessageStatisticResponse(messageRepository.
+                    findAll().
+                    stream().
+                    collect(Collectors.toMap(message -> message.
+                                    getStatus().
+                                    name(),
+                            count -> 1L, Long::sum)));
+            log.info("Статистика сообщений собрана: {}", messageStatisticResponse);
+            return messageStatisticResponse;
+        }catch (Exception e){
+            log.error("Произошла ошибка при получении статистики сообщений",e);
+            throw new MessageStatisticResponseException(MessageStatisticResponseException.MESSAGE_STATISTIC_EXCEPTION);
+        }
     }
 }

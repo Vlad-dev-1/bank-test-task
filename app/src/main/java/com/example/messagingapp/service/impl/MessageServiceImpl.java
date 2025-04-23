@@ -11,6 +11,7 @@ import com.example.messagingapp.kafka.producer.KafkaMessageProducer;
 import com.example.messagingapp.repository.MessageRepository;
 import com.example.messagingapp.service.MessageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MessageServiceImpl implements MessageService {
@@ -28,17 +30,21 @@ public class MessageServiceImpl implements MessageService {
 
     private final KafkaMessageProducer kafkaMessageProducer;
 
+    private final MessageSaveInError messageSaveInError;
+
 
     @Override
     @Transactional
     public MessageResponse saveMessage(MessageRequest messageRequest) {
-
+        log.info("Начало обработки сообщения: {}", messageRequest.getContent());
         Message message = mapperMessage.mapperMessageRequestDto(messageRequest);
-        kafkaMessageProducer.sendMessageRequest(messageRequest);
-        MessageStatus[] statuses = MessageStatus.values();
-        Message messageByStatus = null;
 
         try {
+            kafkaMessageProducer.sendMessageRequest(messageRequest);
+            log.info("Отправка входящего сообщения в Kafka. ID сообщения: {}", messageRequest.getId());
+
+            MessageStatus[] statuses = MessageStatus.values();
+            Message messageByStatus = null;
 
             for (int i = 0; i < statuses.length - 1; i++) {
                 messageByStatus = Message.builder().id(message.getId())
@@ -47,22 +53,21 @@ public class MessageServiceImpl implements MessageService {
                         .timestamp(message.getTimestamp())
                         .processedAt(Instant.now())
                         .build();
+                //логика обработки сообщения
+                Thread.sleep(500);
                 messageRepository.save(messageByStatus);
-
-                Thread.sleep(1000);
+                log.info("Сохранение сообщения ID: {} статус: {}", messageByStatus.getId(), messageByStatus.getStatus());
             }
-
             MessageResponse messageResponse = mapperMessage.mapperMessage(messageByStatus);
             kafkaMessageProducer.sendMessageResponse(messageResponse);
+            log.info("Отправлен ответ на сообщение в Kafka для ID: {}, статус {}", messageResponse.getMessageId(),
+                    messageResponse.getStatus());
             return messageResponse;
 
         } catch (Exception e) {
-            message.setStatus(MessageStatus.FAILED);
-            message.setProcessedAt(Instant.now());
-            messageRepository.save(message);
-            MessageResponse messageResponse = mapperMessage.mapperMessage(message);
-            kafkaMessageProducer.sendMessageResponse(messageResponse);
-            return messageResponse;
+            log.error("Ошибка обработки сообщения ID: {}. Причина: {}",
+                    message.getId(), e.getMessage(), e);
+            return messageSaveInError.messageSaveInError(message);
         }
     }
 
@@ -72,8 +77,10 @@ public class MessageServiceImpl implements MessageService {
 
         List<MessageResponse> allMessage = mapperMessage.getAllMessage(messageRepository.findAll());
         if (!allMessage.isEmpty()) {
+            log.info("Найдено {} сообщений", allMessage.size());
             return allMessage;
         } else {
+            log.warn("Сообщения не найдены в базе данных");
             throw new MessagesNotFound(MessagesNotFound.MESSAGES_NOT_FOUND);
         }
     }
@@ -83,6 +90,9 @@ public class MessageServiceImpl implements MessageService {
     public MessageResponse getMessageByID(UUID idMessage) {
         Message message = messageRepository.findById(idMessage).orElseThrow(() ->
                 new MessageNotFoundById(MessageNotFoundById.MESSAGE_NOT_FOUND_BY_ID));
+        log.info("Найдено сообщение ID: {}, контент {}, со статусом: {}", idMessage,
+                message.getContent(),
+                message.getStatus());
         return mapperMessage.mapperMessage(message);
     }
 }

@@ -27,6 +27,7 @@ public class KafkaMessageConsumer {
     public void consume(@Payload MessageRequest message,
                         @Header(KafkaHeaders.RECEIVED_KEY) String key,
                         @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
+
         processMessage(message, key, topic, "MessageRequest");
     }
 
@@ -38,6 +39,7 @@ public class KafkaMessageConsumer {
     public void consume(@Payload MessageResponse message,
                         @Header(KafkaHeaders.RECEIVED_KEY) String key,
                         @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
+
         processMessage(message, key, topic, "MessageResponse");
     }
 

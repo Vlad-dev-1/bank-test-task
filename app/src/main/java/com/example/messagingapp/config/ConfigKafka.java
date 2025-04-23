@@ -1,6 +1,7 @@
 package com.example.messagingapp.config;
 
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -50,6 +51,13 @@ public class ConfigKafka {
     @Value("${spring.kafka.listener.retry.max-attempts}")
     private Long maxAttempts;
 
+    @PostConstruct
+    public void init() {
+        log.info("Инициализация Kafka конфигурации для сервера: {}", bootstrapServers);
+        log.info("Топика для входящих сообщений: {}, Топика для исходящих сообщений: {}", inputTopic, outputTopic);
+        log.info("Группа потребителя: {}, Автосмещение: {}", kafkaGroupID, autoOffsetReset);
+    }
+
     // Producer Configuration
     @Bean
     public ProducerFactory<String, Object> producerFactory() {
@@ -59,12 +67,17 @@ public class ConfigKafka {
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         configProps.put(ProducerConfig.ACKS_CONFIG, "all");
         configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
+
+        log.info("Создание ProducerFactory с конфигурацией: {}", configProps);
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 
     @Bean
     public KafkaTemplate<String, Object> kafkaTemplate() {
-        return new KafkaTemplate<>(producerFactory());
+        KafkaTemplate<String, Object> kafkaTemplate = new KafkaTemplate<>(producerFactory());
+
+        log.info("KafkaTemplate создан и настроен");
+        return kafkaTemplate;
     }
 
     // Consumer Configuration
@@ -90,6 +103,7 @@ public class ConfigKafka {
                 "messageRequest:com.example.messagingapp.dto.MessageRequest," +
                         "messageResponse:com.example.messagingapp.dto.MessageResponse");
 
+        log.info("Создание ConsumerFactory с конфигурацией: {}", config);
         return new DefaultKafkaConsumerFactory<>(config);
     }
 
@@ -101,31 +115,38 @@ public class ConfigKafka {
 
         // Настройка обработки ошибок (3 попытки с интервалом 1 секунда)
         CommonErrorHandler errorHandler = new DefaultErrorHandler(
-                (consumerRecord, exception) -> log.error("Ошибка обработки сообщения. Topic: {}, Key: {}, Value: {}",
-                        consumerRecord.topic(),
-                        consumerRecord.key(),
-                        consumerRecord.value(),
-                        exception),
+                (record, exception) ->
+                    log.error("!!!Сообщение не обработано после всех попыток. Топик: {}, Ключ: {}",
+                            record.topic(), record.key(), exception),
                 new FixedBackOff(interval, maxAttempts)
         );
         factory.setCommonErrorHandler(errorHandler);
+
+        log.info("Настроен слушатель Kafka с {} попытками и интервалом {}мс", maxAttempts, interval);
         return factory;
     }
 
     // Topic Configuration
     @Bean
     public NewTopic inputTopic() {
-        return TopicBuilder.name(inputTopic)
+
+        NewTopic topic = TopicBuilder.name(inputTopic)
                 .partitions(1)
                 .replicas(1)
                 .build();
+
+        log.info("Создание топика для входящих сообщений: {} с 1 партицией", inputTopic);
+        return topic;
     }
 
     @Bean
     public NewTopic outputTopic() {
-        return TopicBuilder.name(outputTopic)
+
+        NewTopic topic = TopicBuilder.name(outputTopic)
                 .partitions(1)
                 .replicas(1)
                 .build();
+        log.info("Создание топика для исходящих сообщений: {} с 1 партицией", outputTopic);
+        return topic;
     }
 }

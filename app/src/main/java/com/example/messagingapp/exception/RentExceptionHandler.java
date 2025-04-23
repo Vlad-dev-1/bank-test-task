@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class RentExceptionHandler {
 
-    @ExceptionHandler({MessagesNotFound.class, MessageNotFoundById.class})
+    @ExceptionHandler({MessagesNotFound.class, MessageNotFoundById.class, KafkaSendException.class})
     public ResponseEntity<ErrorResponceApp> handleNotFoundException(RuntimeException e) {
         return buildErrorResponseEntity(e.getMessage());
     }

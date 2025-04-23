@@ -27,9 +27,10 @@ spring:
     enabled: true
     user: postgres
     password: postgres
-    url: jdbc:postgresql://localhost:5433/postgres
+    url: jdbc:postgresql://postgres:5432/postgres
+    locations: classpath:db/migration
   datasource:
-    url: jdbc:postgresql://localhost:5433/postgres
+    url: jdbc:postgresql://postgres:5432/postgres
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -46,7 +47,7 @@ app:
   kafka:
     input-topic: input-messages
     output-topic: output-messages
-    bootstrap-servers: localhost:29092
+    bootstrap-servers: kafka:9092
 
 springdoc:
   swagger-ui:
@@ -56,10 +57,40 @@ springdoc:
     operationsSorter: alpha
   api-docs:
     path: /api-docs
-  version: 1.0.0
+    version: openapi_3_1
 
 
 logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    root: INFO
+    org.springframework: INFO
+    org.apache.kafka: INFO
+    com.example.messagingapp: INFO
+  file:
+    name: app/logs/application.log  # Путь к файлу логов
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    console: "%d{HH:mm:ss} %-5level %logger{36} - %msg%n"
+
+resilience4j:
+  circuitbreaker:           # Основная секция для настройки Circuit Breaker
+    instances:             # Определение конкретных экземпляров Circuit Breaker
+      kafkaProducer:       # Имя экземпляра (используется в @CircuitBreaker(name = "kafkaProducer"))
+        # Тип скользящего окна для подсчета ошибок
+        sliding-window-type: COUNT_BASED  # Альтернатива: TIME_BASED (анализ за временной промежуток)
+        # Размер окна для анализа ошибок
+        sliding-window-size: 10  # Анализировать последние 10 вызовов
+        # Минимальное количество вызовов перед активацией CB
+        minimum-number-of-calls: 5  # Нужно минимум 5 вызовов для анализа статистики
+        # Порог процента ошибок для размыкания цепи
+        failure-rate-threshold: 50  # Размыкать цепь при 50% ошибок в окне
+        # Время в разомкнутом состоянии
+        wait-duration-in-open-state: 30s  # После размыкания ждать 30 секунд перед попыткой восстановления
+        # Количество тестовых запросов в полуоткрытом состоянии
+        permitted-number-of-calls-in-half-open-state: 3  # Пропустить 3 запроса для проверки восстановления
+        # Исключения, которые считаются ошибками для CB
+        record-exceptions:
+          - org.springframework.kafka.KafkaException  # Все исключения Kafka
+          - java.util.concurrent.TimeoutException     # Таймауты при работе с Kafka

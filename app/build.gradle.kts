@@ -46,6 +46,11 @@ dependencies {
     implementation("org.apache.kafka:kafka-clients:3.6.1")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
 
+    implementation ("org.springframework.boot:spring-boot-starter-aop")
+    implementation ("io.github.resilience4j:resilience4j-spring-boot3:2.1.0")
+    implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j:3.2.0")
+    implementation ("io.github.resilience4j:resilience4j-reactor:2.1.0")
+
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.3")
     implementation("org.springframework.boot:spring-boot-configuration-processor")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -58,6 +63,11 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
 
 
+}
+dependencyManagement {
+    imports {
+        mavenBom ("org.springframework.cloud:spring-cloud-dependencies:2022.0.4")
+    }
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
@@ -84,5 +94,9 @@ tasks.withType<JavaCompile> {
             "-Amapstruct.suppressGeneratorTimestamp=true"
         )
     )
+}
+
+tasks.bootJar {
+    archiveFileName.set("app.jar")
 }
 
