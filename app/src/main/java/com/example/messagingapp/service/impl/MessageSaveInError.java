@@ -38,7 +38,8 @@ public class MessageSaveInError {
         MessageResponse messageResponse = mapperMessage.mapperMessage(message);
 
         kafkaMessageProducer.sendMessageResponse(messageResponse);
-        log.info("Отправлен MessageResponse в Kafka. ID сообщения: {}", messageResponse.getMessageId());
+        log.info("Отправлен ответ на сообщение в Kafka. ID сообщения: {}, статус {}", messageResponse.getMessageId(),
+                messageResponse.getStatus());
         return messageResponse;
     }
 }

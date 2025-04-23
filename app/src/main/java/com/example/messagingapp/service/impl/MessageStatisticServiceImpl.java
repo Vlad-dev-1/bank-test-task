@@ -8,6 +8,7 @@ import com.example.messagingapp.service.MessageStatisticService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.stream.Collectors;
 
@@ -19,6 +20,7 @@ public class MessageStatisticServiceImpl implements MessageStatisticService {
     private final MessageRepository messageRepository;
 
     @Override
+    @Transactional
     public MessageStatisticResponse getMessageStatistic() {
         try {
             MessageStatisticResponse messageStatisticResponse = new MessageStatisticResponse(messageRepository.
