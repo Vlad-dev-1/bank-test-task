@@ -1,78 +1,78 @@
 server:
-  port: 8080
+  port: 8080  # Порт, на котором будет работать Spring Boot приложение
 
 spring:
   jackson:
-    date-format: yyyy-MM-dd'T'HH:mm:ss'Z'
-    time-zone: UTC
+    date-format: yyyy-MM-dd'T'HH:mm:ss'Z'  # Формат даты для JSON
+    time-zone: UTC  # Часовой пояс UTC
   kafka:
-    bootstrap-servers: ${app.kafka.bootstrap-servers}
+    bootstrap-servers: ${app.kafka.bootstrap-servers}  # Адреса Kafka брокеров (берётся из переменной)
     listener:
       retry:
-        interval: 1000
-        max-attempts: 3
+        interval: 1000  # Интервал между попытками повтора (1 сек)
+        max-attempts: 3  # Максимальное количество попыток
     consumer:
-      group-id: message-group
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: message-group  # ID группы потребителей
+      auto-offset-reset: earliest  # Чтение с начала топика при отсутствии offset
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer  # Десериализатор ключа
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer  # Десериализатор значения
       properties:
-        spring.json.type.mapping: >-
+        spring.json.type.mapping: >-  # Маппинг типов для десериализации
           request:com.example.messagingapp.dto.MessageRequest,
           response:com.example.messagingapp.dto.MessageResponse
     producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer  # Сериализатор ключа
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer  # Сериализатор значения
   flyway:
-    enabled: true
-    user: postgres
-    password: postgres
-    url: jdbc:postgresql://postgres:5432/postgres
-    locations: classpath:db/migration
+    enabled: true  # Включение Flyway
+    user: postgres  # Пользователь БД для Flyway
+    password: postgres  # Пароль для Flyway
+    url: jdbc:postgresql://postgres:5432/postgres  # URL БД для Flyway
+    locations: classpath:db/migration  # Расположение миграций
   datasource:
-    url: jdbc:postgresql://postgres:5432/postgres
-    username: postgres
-    password: postgres
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://postgres:5432/postgres  # URL основной БД
+    username: postgres  # Пользователь основной БД
+    password: postgres  # Пароль основной БД
+    driver-class-name: org.postgresql.Driver  # Драйвер PostgreSQL
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: validate  # Режим работы Hibernate (валидация схемы)
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-    show-sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect  # Диалект PostgreSQL
+        format_sql: true  # Форматирование SQL в логах
+    show-sql: true  # Показывать SQL в логах
 
 app:
   kafka:
-    input-topic: input-messages
-    output-topic: output-messages
-    bootstrap-servers: kafka:9092
+    input-topic: input-messages  # Название входного топике Kafka
+    output-topic: output-messages  # Название выходного топика Kafka
+    bootstrap-servers: kafka1:9092,kafka2:9093,kafka3:9094  # Адреса Kafka брокеров
 
 springdoc:
   swagger-ui:
-    path: /swagger-ui.html
-    enabled: true
-    tagsSorter: alpha
-    operationsSorter: alpha
+    path: /swagger-ui.html  # Путь к Swagger UI
+    enabled: true  # Включение Swagger UI
+    tagsSorter: alpha  # Сортировка тегов по алфавиту
+    operationsSorter: alpha  # Сортировка операций по алфавиту
   api-docs:
-    path: /api-docs
-    version: openapi_3_1
+    path: /api-docs  # Путь к OpenAPI спецификации
+    version: openapi_3_1  # Версия OpenAPI
 
 
 logging:
   level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    root: INFO
-    org.springframework: INFO
-    org.apache.kafka: INFO
-    com.example.messagingapp: INFO
+    org.hibernate.SQL: DEBUG  # Уровень логирования SQL запросов
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE  # Уровень логирования параметров SQL
+    root: INFO  # Общий уровень логирования
+    org.springframework: INFO  # Уровень логирования Spring
+    org.apache.kafka: INFO  # Уровень логирования Kafka
+    com.example.messagingapp: INFO  # Уровень логирования вашего приложения
   file:
     name: app/logs/application.log  # Путь к файлу логов
   pattern:
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-    console: "%d{HH:mm:ss} %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"  # Формат логов в файле
+    console: "%d{HH:mm:ss} %-5level %logger{36} - %msg%n"  # Формат логов в консоли
 
 resilience4j:
   circuitbreaker:           # Основная секция для настройки Circuit Breaker

@@ -65,8 +65,9 @@ public class ConfigKafka {
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        configProps.put(ProducerConfig.ACKS_CONFIG, "all");
-        configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
+        configProps.put(ProducerConfig.ACKS_CONFIG, "all");  // Ждём подтверждения от всех реплик
+        configProps.put(ProducerConfig.RETRIES_CONFIG, 3);  // 3 попытки при ошибках
+        configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");  // Идемпотентность
 
         log.info("Создание ProducerFactory с конфигурацией: {}", configProps);
         return new DefaultKafkaProducerFactory<>(configProps);
@@ -87,6 +88,7 @@ public class ConfigKafka {
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaGroupID);
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetReset);
+        config.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");  // Для транзакций
 
         // Настройка десериализатора ключа
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -131,11 +133,15 @@ public class ConfigKafka {
     public NewTopic inputTopic() {
 
         NewTopic topic = TopicBuilder.name(inputTopic)
-                .partitions(1)
-                .replicas(1)
+                .partitions(3)
+                .replicas(3)
+                .config("min.insync.replicas","1")  // Важно для отказоустойчивости
                 .build();
 
-        log.info("Создание топика для входящих сообщений: {} с 1 партицией", inputTopic);
+        log.info("Создание топика для входящих сообщений: {} с {} партициями и реплики {}",
+                inputTopic,
+                topic.numPartitions(),
+                topic.replicationFactor());
         return topic;
     }
 
@@ -143,10 +149,14 @@ public class ConfigKafka {
     public NewTopic outputTopic() {
 
         NewTopic topic = TopicBuilder.name(outputTopic)
-                .partitions(1)
-                .replicas(1)
+                .partitions(3)
+                .replicas(3)
+                .config("min.insync.replicas","1")  // Важно для отказоустойчивости
                 .build();
-        log.info("Создание топика для исходящих сообщений: {} с 1 партицией", outputTopic);
+        log.info("Создание топика для обработанных сообщений: {} с {} партициями и реплики {}",
+                inputTopic,
+                topic.numPartitions(),
+                topic.replicationFactor());
         return topic;
     }
 }

@@ -4,6 +4,7 @@ import com.example.messagingapp.dto.MessageRequest;
 import com.example.messagingapp.dto.MessageResponse;
 import com.example.messagingapp.exception.schema.MessageNotFoundByIdSchema;
 import com.example.messagingapp.exception.schema.MessagesNotFoundSchema;
+import com.example.messagingapp.exception.schema.ValidationErrorResponse;
 import com.example.messagingapp.service.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -13,8 +14,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +28,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/messages")
+@Validated
 @Tag(name = "Контроллер сообщений", description = "API для операций с сообщениями")
 public class MessageController {
 
@@ -36,7 +41,13 @@ public class MessageController {
                     description = "Сообщение успешно создано",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = MessageResponse.class)))})
+                            schema = @Schema(implementation = MessageResponse.class))),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Невалидные данные запроса",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ValidationErrorResponse.class)))})
     @PostMapping
     public MessageResponse saveMessage(@RequestBody
                                        @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -45,7 +56,8 @@ public class MessageController {
                                                content = @Content(
                                                        mediaType = "application/json",
                                                        schema = @Schema(implementation = MessageRequest.class)))
-                                       MessageRequest messageRequest) {
+                                       @Valid MessageRequest messageRequest) {
+
         log.info("Попытка создания нового сообщения");
         return messageService.saveMessage(messageRequest);
     }
@@ -71,7 +83,8 @@ public class MessageController {
         return messageService.getMessages();
     }
 
-    @Operation(summary = "Получить сообщение по ID", description = "Возвращает конкретное сообщение по его идентификатору")
+    @Operation(summary = "Получить сообщение по ID",
+            description = "Возвращает конкретное сообщение по его идентификатору")
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "200",
@@ -79,6 +92,13 @@ public class MessageController {
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = MessageResponse.class)))
+            ,
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Невалидный ID сообщения",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ValidationErrorResponse.class)))
             ,
             @ApiResponse(
                     responseCode = "404",
@@ -91,7 +111,8 @@ public class MessageController {
             description = "ID сообщения для поиска",
             required = true,
             example = "550e8400-e29b-41d4-a716-446655440000")
-                                          @PathVariable("id") UUID messageID) {
+                                          @PathVariable("id")
+                                          @NotNull(message = "ID сообщения не может быть null") UUID messageID) {
         log.info("Поиск сообщения по ID: {}", messageID);
         return messageService.getMessageByID(messageID);
     }

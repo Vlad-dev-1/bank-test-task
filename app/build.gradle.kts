@@ -21,10 +21,6 @@ repositories {
 }
 
 dependencies {
-    // Use JUnit Jupiter for testing.
-    testImplementation(libs.junit.jupiter)
-
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     // This dependency is used by the application.
     implementation(libs.guava)
@@ -40,10 +36,15 @@ dependencies {
 
     annotationProcessor(libs.lombok.mapstruct.binding)
 
-    implementation("org.springframework.retry:spring-retry:2.0.11")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
     implementation("org.springframework.kafka:spring-kafka:3.1.5")
     implementation("org.apache.kafka:kafka-clients:3.6.1")
+    implementation("org.springframework.retry:spring-retry:2.0.11")
+
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
 
     implementation ("org.springframework.boot:spring-boot-starter-aop")

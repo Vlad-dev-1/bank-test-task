@@ -1,88 +1,165 @@
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.3.0
-    container_name: zookeeper
+    image: confluentinc/cp-zookeeper:7.3.0  # Используется официальный образ Zookeeper версии 7.3.0
+    container_name: zookeeper  # Имя контейнера
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_CLIENT_PORT: 2181  # Порт для клиентских подключений
+      ZOOKEEPER_TICK_TIME: 2000  # Базовый временной интервал для heartbeat'ов
     ports:
-      - "2181:2181"
+      - "2181:2181"  # Проброс порта на хост
     networks:
-      - kafka-network
+      - kafka-network  # Подключение к сети kafka-network
 
-  kafka:
+  kafka1:
+    image: confluentinc/cp-kafka:7.3.0  # Официальный образ Kafka
+    container_name: kafka1  # Имя контейнера
+    depends_on:
+      - zookeeper  # Зависимость от сервиса zookeeper
+    ports:
+      - "9092:9092"  # Основной порт брокера
+      - "29092:29092"  # Дополнительный порт для доступа с хоста
+    environment:
+      KAFKA_BROKER_ID: 1  # Уникальный ID брокера
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181  # Подключение к Zookeeper
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092,PLAINTEXT_HOST://localhost:29092  # Адреса для подключения
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT  # Протоколы безопасности
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT  # Протокол для межброкерного общения
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3  # Фактор репликации по умолчанию
+      KAFKA_NUM_PARTITIONS: 3  # Количество партиций по умолчанию
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3  # Репликация системного топике offsets
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3  # Репликация топика транзакций
+      KAFKA_MIN_INSYNC_REPLICAS: 1  # Минимальное количество синхронизированных реплик
+      KAFKA_AUTO_LEADER_REBALANCE_ENABLE: "true"  # Автоматический перебаланс лидеров
+      KAFKA_CONTROLLER_SOCKET_TIMEOUT_MS: 30000  # Таймаут для контроллера
+      KAFKA_REQUEST_TIMEOUT_MS: 30000  # Таймаут запросов
+      KAFKA_REPLICA_SOCKET_TIMEOUT_MS: 30000  # Таймаут репликации
+    volumes:
+      - kafka1-data:/var/lib/kafka/data  # Том для хранения данных
+    networks:
+      - kafka-network  # Подключение к сети kafka-network
+
+  kafka2:
     image: confluentinc/cp-kafka:7.3.0
-    container_name: kafka
+    container_name: kafka2
     depends_on:
       - zookeeper
+      - kafka1
     ports:
-      - "9092:9092"
-      - "29092:29092"
+      - "9093:9093"
+      - "29093:29093"
     environment:
-      KAFKA_BROKER_ID: 1
+      KAFKA_BROKER_ID: 2
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9093,PLAINTEXT_HOST://localhost:29093
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 1
+      KAFKA_AUTO_LEADER_REBALANCE_ENABLE: "true"  # Автоматический перебаланс лидеров
+      KAFKA_CONTROLLER_SOCKET_TIMEOUT_MS: 30000   # Таймаут для контроллера
+      KAFKA_REQUEST_TIMEOUT_MS: 30000             # Таймаут запросов
+      KAFKA_REPLICA_SOCKET_TIMEOUT_MS: 30000      # Таймаут репликации
+    volumes:
+      - kafka2-data:/var/lib/kafka/data
     networks:
-      - kafka-network
+      - kafka-network  # Подключение к сети kafka-network
+
+  kafka3:
+    image: confluentinc/cp-kafka:7.3.0
+    container_name: kafka3
+    depends_on:
+      - zookeeper
+      - kafka1
+      - kafka2
+    ports:
+      - "9094:9094"
+      - "29094:29094"
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:9094,PLAINTEXT_HOST://localhost:29094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 1
+      KAFKA_AUTO_LEADER_REBALANCE_ENABLE: "true"  # Автоматический перебаланс лидеров
+      KAFKA_CONTROLLER_SOCKET_TIMEOUT_MS: 30000   # Таймаут для контроллера
+      KAFKA_REQUEST_TIMEOUT_MS: 30000             # Таймаут запросов
+      KAFKA_REPLICA_SOCKET_TIMEOUT_MS: 30000      # Таймаут репликации
+    volumes:
+      - kafka3-data:/var/lib/kafka/data
+    networks:
+      - kafka-network  # Подключение к сети kafka-network
 
   # UI
   kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest  # Веб-интерфейс для Kafka
+    container_name: kafka-ui  # Имя контейнера
     depends_on:
-      - kafka
+      - kafka1
+      - kafka2
+      - kafka3  # Зависимости от брокеров
     ports:
-      - "8081:8080"
+      - "8081:8080"  # Проброс порта веб-интерфейса
     environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAP_SERVERS: kafka:9092
-      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_NAME: local  # Название кластера
+      KAFKA_CLUSTERS_0_BOOTSTRAP_SERVERS: kafka1:9092,kafka2:9093,kafka3:9094  # Адреса брокеров
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181  # Подключение к Zookeeper
     networks:
-      - kafka-network
+      - kafka-network  # Подключение к сети kafka-network
 
   postgres:
-    image: postgres:15
-    container_name: postgres
-    hostname: postgres
+    image: postgres:15  # Официальный образ PostgreSQL 15
+    container_name: postgres  # Имя контейнера
+    hostname: postgres  # Имя хоста
     ports:
-      - "5433:5432"
+      - "5433:5432"  # Проброс порта
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres  # Логин
+      POSTGRES_PASSWORD: postgres  # Пароль
+      POSTGRES_DB: postgres  # Имя БД
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data  # Том для хранения данных
     networks:
-      - kafka-network
+      - kafka-network  # Подключение к сети kafka-network
 
   app:
-    container_name: messaging-app
+    container_name: messaging-app  # Имя контейнера
     build:
-      context: .
+      context: .  # Сборка из текущей директории
     ports:
-      - "8080:8080"
+      - "8080:8080"  # Проброс порта приложения
     volumes:
-      - ./logs:/app/logs
+      - ./logs:/app/logs  # Монтирование директории с логами
     depends_on:
-        - postgres
-        - kafka
+      - zookeeper
+      - kafka1
+      - kafka2
+      - kafka3
+      - postgres  # Зависимости от других сервисов
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
-      SPRING_FLYWAY_URL: jdbc:postgresql://postgres:5432/postgres
-      SPRING_FLYWAY_USER: postgres
-      SPRING_FLYWAY_PASSWORD: postgres
-      SPRING_KAFKA_BOOTSTRAP-SERVERS: kafka:9092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres  # URL БД
+      SPRING_DATASOURCE_USERNAME: postgres  # Логин БД
+      SPRING_DATASOURCE_PASSWORD: postgres  # Пароль БД
+      SPRING_FLYWAY_URL: jdbc:postgresql://postgres:5432/postgres  # URL для Flyway
+      SPRING_FLYWAY_USER: postgres  # Логин Flyway
+      SPRING_FLYWAY_PASSWORD: postgres  # Пароль Flyway
+      SPRING_KAFKA_BOOTSTRAP-SERVERS: kafka1:9092,kafka2:9093,kafka3:9094  # Адреса Kafka брокеров
     networks:
-      - kafka-network
+      - kafka-network  # Подключение к сети kafka-network
 
 networks:
   kafka-network:
-    driver: bridge
+    driver: bridge  # Создание bridge-сети для контейнеров
 
 volumes:
-  postgres-data:
+  postgres-data:  # Том для данных PostgreSQL
+  kafka1-data:  # Том для данных первого брокера
+  kafka2-data:  # Том для данных второго брокера
+  kafka3-data:  # Том для данных третьего брокера

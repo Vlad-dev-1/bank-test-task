@@ -24,7 +24,8 @@ import static com.example.messagingapp.exception.KafkaSendException.FAILED_SEND_
 @RequiredArgsConstructor
 public class KafkaMessageProducer {
 
-    private static final String SEND_SUCCESS_MESSAGE_TOPIC = "Сообщение отправлено. Топик: {}, Ключ: {}, Партиция: {}, Оффсет: {}";
+    private static final String SEND_SUCCESS_MESSAGE_TOPIC = "Сообщение отправлено. Топик: {}," +
+            " Ключ: {}, Партиция: {}, Оффсет: {}";
     private static final String SEND_ERROR_MESSAGE_TOPIC = "Ошибка отправки сообщения. Топик: {}, Ключ: {}";
 
     @Value("${app.kafka.input-topic}")
@@ -47,18 +48,18 @@ public class KafkaMessageProducer {
 
     public CompletableFuture<Void> sendMessageRequest(MessageRequest messageRequest) {
         String key = messageRequest.getId().toString();
-        return sendMessage(requestMessageKafkaTemplate, inputTopic, key, messageRequest);
+        return sendMessageToPartition(requestMessageKafkaTemplate, inputTopic, key, messageRequest);
     }
 
     public CompletableFuture<Void> sendMessageResponse(MessageResponse messageResponse) {
         String key = messageResponse.getMessageId().toString();
-        return sendMessage(responseMessageKafkaTemplate, outputTopic, key, messageResponse);
+        return sendMessageToPartition(responseMessageKafkaTemplate, outputTopic, key, messageResponse);
     }
 
-    private CompletableFuture<Void> sendMessage(KafkaTemplate<String, Object> kafkaTemplate,
-                                                String topic,
-                                                String key,
-                                                Object message) {
+    private CompletableFuture<Void> sendMessageToPartition(KafkaTemplate<String, Object> kafkaTemplate,
+                                                           String topic,
+                                                           String key,
+                                                           Object message) {
         CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker("kafkaProducer");
 
         return circuitBreaker.executeSupplier(() ->

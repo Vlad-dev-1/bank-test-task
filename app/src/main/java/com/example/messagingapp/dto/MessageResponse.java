@@ -12,6 +12,7 @@ import java.util.UUID;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Schema(description = "Ответ с данными сообщения")
 public class MessageResponse {
 

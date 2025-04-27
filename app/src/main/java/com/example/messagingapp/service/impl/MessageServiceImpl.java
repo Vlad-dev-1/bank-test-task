@@ -54,7 +54,7 @@ public class MessageServiceImpl implements MessageService {
                         .processedAt(Instant.now())
                         .build();
                 //логика обработки сообщения
-                Thread.sleep(500);
+                Thread.sleep(50);
                 messageRepository.save(messageByStatus);
                 log.info("Сохранение сообщения ID: {} статус: {}", messageByStatus.getId(), messageByStatus.getStatus());
             }

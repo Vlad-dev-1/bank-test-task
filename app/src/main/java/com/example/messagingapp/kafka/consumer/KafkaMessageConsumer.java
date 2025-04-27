@@ -19,44 +19,56 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class KafkaMessageConsumer {
 
-    @KafkaListener(topics = "${app.kafka.input-topic}", groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(
+            topics = "${app.kafka.input-topic}",
+            groupId = "${spring.kafka.consumer.group-id}",
+            properties = "metadata.max.age.ms=10000"  // Чаще обновлять метаданные о брокерах
+    )
     @Retryable(
             retryFor = KafkaException.class,
             maxAttemptsExpression = "#{${spring.kafka.listener.retry.max-attempts}}",
-            backoff = @Backoff(delayExpression = "#{${spring.kafka.listener.retry.interval}}"))
-    public void consume(@Payload MessageRequest message,
-                        @Header(KafkaHeaders.RECEIVED_KEY) String key,
-                        @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
-
-        processMessage(message, key, topic, "MessageRequest");
+            backoff = @Backoff(delayExpression = "#{${spring.kafka.listener.retry.interval}}")
+    )
+    public void consumeInputTopic(@Payload MessageRequest message,
+                                  @Header(KafkaHeaders.RECEIVED_KEY) String key,
+                                  @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+                                  @Header(KafkaHeaders.RECEIVED_PARTITION) int partition) {
+        processMessage(message, key, topic, partition, "MessageRequest");
     }
 
-    @KafkaListener(topics = "${app.kafka.output-topic}", groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(
+            topics = "${app.kafka.output-topic}",
+            groupId = "${spring.kafka.consumer.group-id}",
+            properties = "metadata.max.age.ms=10000"  // Чаще обновлять метаданные о брокерах
+    )
     @Retryable(
             retryFor = KafkaException.class,
             maxAttemptsExpression = "#{${spring.kafka.listener.retry.max-attempts}}",
-            backoff = @Backoff(delayExpression = "#{${spring.kafka.listener.retry.interval}}"))
-    public void consume(@Payload MessageResponse message,
-                        @Header(KafkaHeaders.RECEIVED_KEY) String key,
-                        @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
-
-        processMessage(message, key, topic, "MessageResponse");
+            backoff = @Backoff(delayExpression = "#{${spring.kafka.listener.retry.interval}}")
+    )
+    public void consumeOutputTopic(@Payload MessageResponse message,
+                                   @Header(KafkaHeaders.RECEIVED_KEY) String key,
+                                   @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+                                   @Header(KafkaHeaders.RECEIVED_PARTITION) int partition) {
+        processMessage(message, key, topic, partition, "MessageResponse");
     }
 
-    private <T> void processMessage(T message, String key, String topic, String messageType) {
+    private <T> void processMessage(T message, String key, String topic, int partition, String messageType) {
         try {
             if (message == null) {
-                log.warn("Получено пустое сообщение типа {} из топика {}", messageType, topic);
+                log.warn("Получено пустое сообщение (ключ: {}) типа {} из топика {}, партиция {}",
+                        key, messageType, topic, partition);
                 return;
             }
-            log.info("Получено сообщение типа {} из топика {}: {}", key, topic, message);
+            log.info("Получено сообщение (ключ: {}) типа {} из топика {}, партиция {}: {}",
+                    key, messageType, topic, partition, message);
 
         } catch (SerializationException e) {
-            log.error("Ошибка десериализации {}: {}", messageType, e.getMessage());
+            log.error("Ошибка десериализации {} (партиция {}): {}", messageType, partition, e.getMessage());
         } catch (KafkaException e) {
-            log.error("Ошибка Kafka при обработке {}: {}", messageType, e.getMessage());
+            log.error("Ошибка Kafka при обработке {} (партиция {}): {}", messageType, partition, e.getMessage());
         } catch (Exception e) {
-            log.error("Неожиданная ошибка при обработке {}: {}", messageType, e.getMessage(), e);
+            log.error("Неожиданная ошибка при обработке {} (партиция {}): {}", messageType, partition, e.getMessage(), e);
         }
     }
 }
