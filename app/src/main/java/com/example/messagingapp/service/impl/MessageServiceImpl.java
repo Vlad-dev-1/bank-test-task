@@ -12,6 +12,9 @@ import com.example.messagingapp.repository.MessageRepository;
 import com.example.messagingapp.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +25,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@CacheConfig(cacheNames = "messages")
 public class MessageServiceImpl implements MessageService {
 
     private final MessageRepository messageRepository;
@@ -35,6 +39,7 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     @Transactional
+    @CacheEvict(allEntries = true)
     public MessageResponse saveMessage(MessageRequest messageRequest) {
         log.info("Начало обработки сообщения: {}", messageRequest.getContent());
         Message message = mapperMessage.mapperMessageRequestDto(messageRequest);
@@ -73,6 +78,7 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(sync = true)
     public List<MessageResponse> getMessages() {
 
         List<MessageResponse> allMessage = mapperMessage.getAllMessage(messageRepository.findAll());
@@ -87,6 +93,7 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(key = "#idMessage", unless = "#result == null")
     public MessageResponse getMessageByID(UUID idMessage) {
         Message message = messageRepository.findById(idMessage).orElseThrow(() ->
                 new MessageNotFoundById(MessageNotFoundById.MESSAGE_NOT_FOUND_BY_ID));

@@ -2,6 +2,15 @@ server:
   port: 8080  # Порт, на котором будет работать Spring Boot приложение
 
 spring:
+  cache:
+    type: caffeine  # Тип используемого кэша
+    caffeine:
+      # Спецификация конфигурации кэша Caffeine:
+      # - maximumSize=1000: максимальное количество элементов в кэше
+      # - expireAfterWrite=5m: время жизни записи после создания/обновления (5 минут)
+      # - refreshAfterWrite=1m: интервал для фонового обновления записей (1 минута)
+      # - recordStats: включение сбора статистики использования кэша
+      spec: maximumSize=1000, expireAfterWrite=5m, refreshAfterWrite=1m, recordStats
   jackson:
     date-format: yyyy-MM-dd'T'HH:mm:ss'Z'  # Формат даты для JSON
     time-zone: UTC  # Часовой пояс UTC
