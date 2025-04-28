@@ -5,12 +5,10 @@ import com.example.messagingapp.dto.MessageRequest;
 import com.example.messagingapp.dto.MessageResponse;
 
 import com.example.messagingapp.exception.KafkaSendException;
-import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JCircuitBreakerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -36,15 +34,7 @@ public class KafkaMessageProducer {
 
     private final KafkaTemplate<String, Object> requestMessageKafkaTemplate;
     private final KafkaTemplate<String, Object> responseMessageKafkaTemplate;
-    private final CircuitBreakerRegistry circuitBreakerRegistry;
-
-    @PostConstruct
-    public void init() {
-        CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker("kafkaProducer");
-        circuitBreaker.getEventPublisher()
-                .onStateTransition(event ->
-                        log.warn("Circuit Breaker изменил состояние: {}", event.getStateTransition()));
-    }
+    private final Resilience4JCircuitBreakerFactory circuitBreakerFactory;
 
     public CompletableFuture<Void> sendMessageRequest(MessageRequest messageRequest) {
         String key = messageRequest.getId().toString();
@@ -60,9 +50,9 @@ public class KafkaMessageProducer {
                                                            String topic,
                                                            String key,
                                                            Object message) {
-        CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker("kafkaProducer");
 
-        return circuitBreaker.executeSupplier(() ->
+        // Выполнение операции с Circuit Breaker
+        return circuitBreakerFactory.create("kafkaProducer").run(() ->
                 kafkaTemplate.send(topic, key, message)
                         .thenApply(result -> {
                             log.info(SEND_SUCCESS_MESSAGE_TOPIC,
@@ -70,12 +60,10 @@ public class KafkaMessageProducer {
                                     key,
                                     result.getRecordMetadata().partition(),
                                     result.getRecordMetadata().offset());
-                            return (Void) null;
-                        })
-                        .exceptionally(ex -> {
-                            log.error(SEND_ERROR_MESSAGE_TOPIC, topic, key, ex);
-                            throw new KafkaSendException(FAILED_SEND_KAFKA);
-                        })
-        );
+                            return null;
+                        }), ex -> {
+            log.error(SEND_ERROR_MESSAGE_TOPIC, topic, key, ex);
+            throw new KafkaSendException(FAILED_SEND_KAFKA);
+        });
     }
 }

@@ -8,9 +8,9 @@ spring:
       # Спецификация конфигурации кэша Caffeine:
       # - maximumSize=1000: максимальное количество элементов в кэше
       # - expireAfterWrite=5m: время жизни записи после создания/обновления (5 минут)
-      # - refreshAfterWrite=1m: интервал для фонового обновления записей (1 минута)
       # - recordStats: включение сбора статистики использования кэша
-      spec: maximumSize=1000, expireAfterWrite=5m, refreshAfterWrite=1m, recordStats
+      spec: maximumSize=1000, expireAfterWrite=5m, recordStats
+    cache-names: messages
   jackson:
     date-format: yyyy-MM-dd'T'HH:mm:ss'Z'  # Формат даты для JSON
     time-zone: UTC  # Часовой пояс UTC
@@ -71,6 +71,7 @@ springdoc:
 
 logging:
   level:
+    org.springframework.cache: TRACE  # Уровень логирования для кэша
     org.hibernate.SQL: DEBUG  # Уровень логирования SQL запросов
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE  # Уровень логирования параметров SQL
     root: INFO  # Общий уровень логирования
@@ -84,22 +85,48 @@ logging:
     console: "%d{HH:mm:ss} %-5level %logger{36} - %msg%n"  # Формат логов в консоли
 
 resilience4j:
-  circuitbreaker:           # Основная секция для настройки Circuit Breaker
-    instances:             # Определение конкретных экземпляров Circuit Breaker
-      kafkaProducer:       # Имя экземпляра (используется в @CircuitBreaker(name = "kafkaProducer"))
-        # Тип скользящего окна для подсчета ошибок
-        sliding-window-type: COUNT_BASED  # Альтернатива: TIME_BASED (анализ за временной промежуток)
-        # Размер окна для анализа ошибок
-        sliding-window-size: 10  # Анализировать последние 10 вызовов
-        # Минимальное количество вызовов перед активацией CB
-        minimum-number-of-calls: 5  # Нужно минимум 5 вызовов для анализа статистики
-        # Порог процента ошибок для размыкания цепи
-        failure-rate-threshold: 50  # Размыкать цепь при 50% ошибок в окне
-        # Время в разомкнутом состоянии
-        wait-duration-in-open-state: 30s  # После размыкания ждать 30 секунд перед попыткой восстановления
-        # Количество тестовых запросов в полуоткрытом состоянии
-        permitted-number-of-calls-in-half-open-state: 3  # Пропустить 3 запроса для проверки восстановления
-        # Исключения, которые считаются ошибками для CB
-        record-exceptions:
-          - org.springframework.kafka.KafkaException  # Все исключения Kafka
-          - java.util.concurrent.TimeoutException     # Таймауты при работе с Kafka
+  circuitbreaker:
+    configs:
+      default:  # Общая конфигурация
+        # Тип скользящего окна для подсчета ошибок:
+        # COUNT_BASED - анализировать последние N вызовов
+        # TIME_BASED - анализировать вызовы за последний период времени
+        slidingWindowType: COUNT_BASED  # Анализ последних 10 вызовов
+        # Размер скользящего окна:
+        # Для COUNT_BASED - количество последних вызовов (10)
+        # Для TIME_BASED - временной период в секундах
+        slidingWindowSize: 10           # Размер окна мониторинга
+        # Минимальное количество вызовов перед активацией CB:
+        # Circuit Breaker начнет работать только после 5 вызовов
+        minimumNumberOfCalls: 5         # Минимум вызовов перед анализом
+        # Автопереход из состояния OPEN (разомкнуто) в HALF_OPEN (полуразомкнуто)
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        # Время в открытом состоянии:
+        # После активации CB останется открытым 5 секунд перед переходом в полуоткрытое
+        waitDurationInOpenState: 5s     # Время в открытом состоянии
+        # Порог процента ошибок для срабатывания (50%):
+        # Если 50% или более вызовов из окна завершатся ошибкой - CB активируется
+        failureRateThreshold: 50        # Порог срабатывания (50%)
+        # Количество разрешенных вызовов в полуоткрытом состоянии:
+        # В полуоткрытом состоянии пропустит 3 вызова для проверки восстановления
+        permittedNumberOfCallsInHalfOpenState: 3  # Тестовые вызовы
+        eventConsumerBufferSize: 10     # Буфер событий, хранит 10 последних событий
+
+    instances:
+      kafkaProducer:
+        baseConfig: default
+        recordExceptions:  # Специфичные для Kafka ошибки
+          - org.springframework.kafka.KafkaException  # Ошибки работы с Kafka
+          - java.util.concurrent.TimeoutException  # Таймауты при взаимодействии
+
+      messageService:
+        baseConfig: default
+        recordExceptions:  # Общие ошибки сервиса
+          - org.springframework.dao.DataAccessException  # Ошибки доступа к данным
+          - java.lang.RuntimeException  # Все runtime ошибки
+
+      messageStatisticService:
+        baseConfig: default
+        recordExceptions:  # Ошибки статистики
+          - org.springframework.dao.DataAccessException # Ошибки доступа к данным
+          - java.lang.RuntimeException  # Все runtime ошибки
