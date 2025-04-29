@@ -20,7 +20,17 @@ repositories {
     mavenCentral()
 }
 
+dependencyManagement {
+    imports {
+        mavenBom ("org.springframework.cloud:spring-cloud-dependencies:2022.0.4")
+    }
+}
+
 dependencies {
+    // Use JUnit Jupiter for testing.
+    testImplementation(libs.junit.jupiter)
+
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     // This dependency is used by the application.
     implementation(libs.guava)
@@ -43,15 +53,15 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-cache")
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
 
-    implementation("org.springframework.kafka:spring-kafka:3.1.5")
-    implementation("org.apache.kafka:kafka-clients:3.6.1")
+    implementation("org.springframework.kafka:spring-kafka:3.1.3")
+    implementation("org.apache.kafka:kafka-clients:3.7.1")
     implementation("org.springframework.retry:spring-retry:2.0.11")
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
 
     implementation ("org.springframework.boot:spring-boot-starter-aop")
     implementation ("io.github.resilience4j:resilience4j-spring-boot3:2.1.0")
-    implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j:3.2.0")
+    implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j")
     implementation ("io.github.resilience4j:resilience4j-reactor:2.1.0")
 
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.3")
@@ -67,9 +77,10 @@ dependencies {
 
 
 }
-dependencyManagement {
-    imports {
-        mavenBom ("org.springframework.cloud:spring-cloud-dependencies:2022.0.4")
+configurations.all {
+    resolutionStrategy {
+        // Принудительно заменяем все транзитивные зависимости Kafka
+        force("org.apache.kafka:kafka-clients:3.7.1")
     }
 }
 
