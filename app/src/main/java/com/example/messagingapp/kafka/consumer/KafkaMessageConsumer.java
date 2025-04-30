@@ -53,7 +53,7 @@ public class KafkaMessageConsumer {
         processMessage(message, key, topic, partition, "MessageResponse");
     }
 
-    private <T> void processMessage(T message, String key, String topic, int partition, String messageType) {
+    public  <T> void processMessage(T message, String key, String topic, int partition, String messageType) {
         try {
             if (message == null) {
                 log.warn("Получено пустое сообщение (ключ: {}) типа {} из топика {}, партиция {}",

@@ -2,12 +2,12 @@ package com.example.messagingapp.exception.schema;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 
 import java.time.Instant;
 import java.util.List;
 
-@Data
+@Getter
 @AllArgsConstructor
 @Schema(description = "Ошибка валидации")
 public class ValidationErrorResponse {

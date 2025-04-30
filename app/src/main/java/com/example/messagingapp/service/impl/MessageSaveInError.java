@@ -1,7 +1,8 @@
 package com.example.messagingapp.service.impl;
 
+import com.example.messagingapp.dto.MessageRequest;
 import com.example.messagingapp.dto.MessageResponse;
-import com.example.messagingapp.dto.mapper.MapperMessage;
+import com.example.messagingapp.mapper.MapperMessage;
 import com.example.messagingapp.entity.Message;
 import com.example.messagingapp.entity.MessageStatus;
 import com.example.messagingapp.kafka.producer.KafkaMessageProducer;
@@ -26,19 +27,19 @@ public class MessageSaveInError {
     private final KafkaMessageProducer kafkaMessageProducer;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public MessageResponse messageSaveInError(Message message) {
-        log.warn("Сохранение сообщения в статусе FAILED. ID: {}, контент: {}, время получения {}",
-                message.getId(), message.getContent(), message.getTimestamp());
+    public MessageResponse messageSaveInError(MessageRequest messageRequest) {
+        log.warn("Попытка сохранения не обработанного сообщения в статусе FAILED. ID: {}, время получения {}",
+                messageRequest.getId(), messageRequest.getTimestamp());
+        Message message = mapperMessage.mapperMessageRequestToMessage(messageRequest);
         message.setStatus(MessageStatus.FAILED);
         message.setProcessedAt(Instant.now());
         messageRepository.save(message);
-        log.debug("Сообщение сохранено с ID: {}, статус: {}",
-                message.getId(), message.getStatus());
+        log.info("Не обработанное сообщение сохранено с ID: {}, статус: {}", message.getId(), message.getStatus());
 
-        MessageResponse messageResponse = mapperMessage.mapperMessage(message);
-
+        MessageResponse messageResponse = mapperMessage.mapperMessageToMessageResponse(message);
         kafkaMessageProducer.sendMessageResponse(messageResponse);
-        log.info("Отправлен ответ на сообщение в Kafka. ID сообщения: {}, статус {}", messageResponse.getMessageId(),
+        log.info("Не обработанное сообщение отправлено в Kafka. ID сообщения: {}, статус {}",
+                messageResponse.getMessageId(),
                 messageResponse.getStatus());
         return messageResponse;
     }

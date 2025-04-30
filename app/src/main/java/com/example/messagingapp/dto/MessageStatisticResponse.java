@@ -15,9 +15,9 @@ public class MessageStatisticResponse {
 
     @Schema(
             description = "Количество сообщений по статусам",
-            allowableValues = {"RECEIVED", "PROCESSING", "PROCESSED", "FAILED"},
-            example = "{\"RECEIVED\": 10, \"PROCESSED\": 5}"
+            allowableValues = {"PROCESSED", "FAILED"},
+            example = "{\"PROCESSED\": 10, \"FAILED\": 5}"
     )
-    private Map<String, Long> stats;
+    private Map<String, Long> statisticMessages;
 
 }

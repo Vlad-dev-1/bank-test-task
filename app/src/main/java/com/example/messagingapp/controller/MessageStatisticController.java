@@ -19,13 +19,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/statistics")
-@Tag(name = "Контроллер статистики сохраненных сообщений в базе данных",
-        description = "API для операций статистики сохраненных сообщений в базе данных по статусу")
+@Tag(name = "Контроллер статистики сообщений в базе данных",
+        description = "API для операций статистики сообщений в базе данных по статусу")
 public class MessageStatisticController {
 
     private final MessageStatisticService messageStatisticService;
 
-    @Operation(summary = "Получить статистику сохраненных сообщений в базе данных",
+    @Operation(summary = "Получить статистику сообщений в базе данных",
             description = "Возвращает список всех сообщений с группированных по статусу")
     @ApiResponse(
             responseCode = "200",
@@ -34,9 +34,7 @@ public class MessageStatisticController {
                     mediaType = "application/json",
                     schema = @Schema(implementation = MessageStatisticResponse.class),
                     examples = @ExampleObject(
-                            value = "{\"RECEIVED\": 15," +
-                                    "\"PROCESSING\": 8," +
-                                    "\"PROCESSED\": 23," +
+                            value = "{\"PROCESSED\": 23," +
                                     "\"FAILED\": 2}",
                             description = "Пример ответа"
                     )

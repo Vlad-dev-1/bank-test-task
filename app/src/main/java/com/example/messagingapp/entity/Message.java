@@ -16,7 +16,6 @@ import java.util.UUID;
 public class Message {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "message_id")
     private UUID id;
 

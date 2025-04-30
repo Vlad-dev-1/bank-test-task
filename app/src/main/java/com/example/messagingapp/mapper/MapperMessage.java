@@ -1,4 +1,4 @@
-package com.example.messagingapp.dto.mapper;
+package com.example.messagingapp.mapper;
 
 
 import com.example.messagingapp.dto.MessageRequest;
@@ -23,19 +23,19 @@ public interface MapperMessage {
 
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "processedAt", ignore = true)
-    Message mapperMessageRequestDto(MessageRequest messageRequest);
+    Message mapperMessageRequestToMessage(MessageRequest messageRequest);
 
     @Mapping(source = "id", target = "messageId")
-    MessageResponse mapperMessage(Message message);
+    MessageResponse mapperMessageToMessageResponse(Message message);
 
-    default List<MessageResponse> getAllMessage(List<Message> messages) {
+    default List<MessageResponse> getAllMessageResponse(List<Message> messages) {
         if (messages == null) {
             log.info("Получен null вместо списка сообщений, возвращаем пустой список");
             return Collections.emptyList();
         }
         log.info("Маппинг списка из {} сообщений", messages.size());
         return messages.stream()
-                .map(this::mapperMessage)
+                .map(this::mapperMessageToMessageResponse)
                 .collect(Collectors.toList());
     }
 }

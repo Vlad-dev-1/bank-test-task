@@ -34,11 +34,11 @@ public class MessageController {
 
     private final MessageService messageService;
 
-    @Operation(summary = "Создать новое сообщение", description = "Создает и сохраняет новое сообщение")
+    @Operation(summary = "Обработать новое сообщение", description = "Обрабатывает и сохраняет новое сообщение")
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "200",
-                    description = "Сообщение успешно создано",
+                    description = "Сообщение успешно обработано",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = MessageResponse.class))),
@@ -58,7 +58,7 @@ public class MessageController {
                                                        schema = @Schema(implementation = MessageRequest.class)))
                                        @Valid MessageRequest messageRequest) {
 
-        log.info("Попытка создания нового сообщения");
+        log.info("Попытка обработки нового сообщения");
         return messageService.saveMessage(messageRequest);
     }
 

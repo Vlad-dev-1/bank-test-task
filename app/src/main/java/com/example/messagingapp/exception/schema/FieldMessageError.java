@@ -2,9 +2,9 @@ package com.example.messagingapp.exception.schema;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 
-@Data
+@Getter
 @AllArgsConstructor
 @Schema(description = "Ошибка поля")
 public class FieldMessageError {

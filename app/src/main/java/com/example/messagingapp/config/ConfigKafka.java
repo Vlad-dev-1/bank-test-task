@@ -54,7 +54,7 @@ public class ConfigKafka {
     @PostConstruct
     public void init() {
         log.info("Инициализация Kafka конфигурации для сервера: {}", bootstrapServers);
-        log.info("Топика для входящих сообщений: {}, Топика для исходящих сообщений: {}", inputTopic, outputTopic);
+        log.info("Топик для входящих сообщений: {}, Топик для исходящих сообщений: {}", inputTopic, outputTopic);
         log.info("Группа потребителя: {}, Автосмещение: {}", kafkaGroupID, autoOffsetReset);
     }
 
@@ -118,7 +118,7 @@ public class ConfigKafka {
         // Настройка обработки ошибок (3 попытки с интервалом 1 секунда)
         CommonErrorHandler errorHandler = new DefaultErrorHandler(
                 (record, exception) ->
-                    log.error("!!!Сообщение не обработано после всех попыток. Топик: {}, Ключ: {}",
+                    log.error("!!!Сообщение не получено после всех попыток. Топик: {}, Ключ: {}",
                             record.topic(), record.key(), exception),
                 new FixedBackOff(interval, maxAttempts)
         );
@@ -153,7 +153,7 @@ public class ConfigKafka {
                 .replicas(3)
                 .config("min.insync.replicas","1")  // Важно для отказоустойчивости
                 .build();
-        log.info("Создание топика для обработанных сообщений: {} с {} партициями и реплики {}",
+        log.info("Создание топика для исходящих сообщений: {} с {} партициями и реплики {}",
                 inputTopic,
                 topic.numPartitions(),
                 topic.replicationFactor());

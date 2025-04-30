@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
 @RestControllerAdvice
 public class RentExceptionHandler {
 
@@ -31,6 +32,11 @@ public class RentExceptionHandler {
                 Instant.now(),
                 errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(MessageExistsToDataBase.class)
+    public ResponseEntity<String> handleMessageExistsToDataBaseException(RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
     }
 
     @ExceptionHandler({MessagesNotFound.class,

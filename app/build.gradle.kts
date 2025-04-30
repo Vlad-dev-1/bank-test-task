@@ -12,6 +12,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.4"
     alias(libs.plugins.lombok.plugin)
     id("java")
+    jacoco
 
 }
 
@@ -112,5 +113,36 @@ tasks.withType<JavaCompile> {
 
 tasks.bootJar {
     archiveFileName.set("app.jar")
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+tasks.test {
+    finalizedBy(tasks.jacocoTestReport)  // Генерировать отчёт после тестов
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)  // Отчёт зависит от выполнения тестов
+    reports {
+        html.required.set(true)  // Включить HTML-отчёт (по умолчанию в `build/reports/jacoco/test/html`)
+        xml.required.set(false)  // Отключить XML (если не нужен для CI)
+        csv.required.set(false)  // Отключить CSV
+    }
+}
+
+tasks.jacocoTestReport {
+    classDirectories.setFrom(
+        files(classDirectories.files.map {
+            fileTree(it).exclude(
+                "**/config/**",     // Исключить классы конфигурации
+                "**/dto/**",        // Исключить DTO
+                "**/entity/**",     // Исключить Entity
+                "**/kafka/**",      // Исключить Kafka
+                "**/exception/**"  // Исключить исключения
+            )
+        })
+    )
 }
 

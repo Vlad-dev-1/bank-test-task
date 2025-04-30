@@ -4,19 +4,20 @@ import com.example.messagingapp.dto.MessageRequest;
 import com.example.messagingapp.dto.MessageResponse;
 import com.example.messagingapp.entity.MessageStatus;
 import com.example.messagingapp.service.MessageService;
-import org.junit.jupiter.api.DisplayName;
+
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -29,39 +30,67 @@ class MessageControllerTest {
     private MessageController messageController;
 
     @Test
-    @DisplayName(value = "saveMessageToDB")
-    void saveMessage() {
-        UUID randomUUID = UUID.randomUUID();
-        MessageRequest messageRequest = MessageRequest.builder()
-                .id(randomUUID)
-                .content("Новое сообщение")
+    void saveMessage_ShouldReturnMessageResponse() {
+
+        MessageRequest request = MessageRequest.builder()
+                .id(UUID.randomUUID())
+                .content("Текст сообщения")
                 .timestamp(Instant.now())
                 .build();
+
         MessageResponse expectedResponse = MessageResponse.builder()
-                .messageId(randomUUID)
+                .messageId(request.getId())
                 .status(MessageStatus.PROCESSED)
                 .processedAt(Instant.now())
                 .build();
-        Mockito.when(messageService.saveMessage(messageRequest)).thenReturn(expectedResponse);
-        MessageResponse actualResponse = messageService.saveMessage(messageRequest);
+        when(messageService.saveMessage(request)).thenReturn(expectedResponse);
+
+        MessageResponse actualResponse = messageController.saveMessage(request);
 
         assertNotNull(actualResponse);
-        assertEquals(expectedResponse.getMessageId(),actualResponse.getMessageId());
-        assertEquals(expectedResponse.getStatus(),actualResponse.getStatus());
-        assertEquals(expectedResponse.getProcessedAt(),actualResponse.getProcessedAt());
-
-        Mockito.verify(messageService,Mockito.times(1)).saveMessage(messageRequest);
+        assertEquals(expectedResponse.getMessageId(), actualResponse.getMessageId());
+        assertEquals(expectedResponse.getStatus(), actualResponse.getStatus());
+        verify(messageService, times(1)).saveMessage(request);
     }
 
     @Test
-    void getAllMessages() {
+    void getAllMessages_ShouldReturnMessageResponseList() {
 
+        MessageResponse message1 = MessageResponse.builder()
+                .messageId(UUID.randomUUID())
+                .status(MessageStatus.PROCESSED)
+                .processedAt(Instant.now())
+                .build();
+        MessageResponse message2 = MessageResponse.builder()
+                .messageId(UUID.randomUUID())
+                .status(MessageStatus.FAILED)
+                .processedAt(Instant.now())
+                .build();
+        List<MessageResponse> expectedMessages = List.of(message1, message2);
+        when(messageService.getMessages()).thenReturn(expectedMessages);
 
+        List<MessageResponse> actualMessages = messageController.getAllMessages();
 
+        assertEquals(2, actualMessages.size());
+        assertTrue(actualMessages.containsAll(expectedMessages));
+        verify(messageService, times(1)).getMessages();
     }
 
     @Test
-    void getMessageByID() {
+    void getMessageById_ShouldReturnMessageResponseById() {
 
+        UUID messageId = UUID.randomUUID();
+        MessageResponse expectedResponse = MessageResponse.builder()
+                .messageId(messageId)
+                .status(MessageStatus.PROCESSED)
+                .processedAt(Instant.now())
+                .build();
+        when(messageService.getMessageByID(messageId)).thenReturn(expectedResponse);
+
+        MessageResponse actualResponse = messageController.getMessageByID(messageId);
+
+        assertNotNull(actualResponse);
+        assertEquals(expectedResponse.getMessageId(), actualResponse.getMessageId());
+        verify(messageService, times(1)).getMessageByID(messageId);
     }
 }

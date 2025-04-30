@@ -2,9 +2,10 @@ package com.example.messagingapp.service.impl;
 
 import com.example.messagingapp.dto.MessageRequest;
 import com.example.messagingapp.dto.MessageResponse;
-import com.example.messagingapp.dto.mapper.MapperMessage;
+import com.example.messagingapp.mapper.MapperMessage;
 import com.example.messagingapp.entity.Message;
 import com.example.messagingapp.entity.MessageStatus;
+import com.example.messagingapp.exception.MessageExistsToDataBase;
 import com.example.messagingapp.exception.MessagesNotFound;
 import com.example.messagingapp.exception.MessageNotFoundById;
 import com.example.messagingapp.kafka.producer.KafkaMessageProducer;
@@ -20,8 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+import static com.example.messagingapp.exception.MessageExistsToDataBase.MESSAGE_EXISTS_TO_DB;
 import static com.example.messagingapp.exception.MessageNotFoundById.MESSAGE_NOT_FOUND_BY_ID;
 import static com.example.messagingapp.exception.MessagesNotFound.MESSAGES_NOT_FOUND;
 
@@ -45,45 +48,46 @@ public class MessageServiceImpl implements MessageService {
     @CacheEvict(cacheNames = "messages", allEntries = true)
     public MessageResponse saveMessage(MessageRequest messageRequest) {
 
+        try {
+            Optional<Message> messageById = messageRepository.findMessageById(messageRequest.getId());
+            if (messageById.isPresent() && messageById.get().getStatus().equals(MessageStatus.PROCESSED)) {
+                throw new MessageExistsToDataBase(MESSAGE_EXISTS_TO_DB);
+            }
+        } catch (MessageExistsToDataBase e) {
+            log.error("Сообщение с таким ID уже обработано", e);
+            throw new MessageExistsToDataBase(MESSAGE_EXISTS_TO_DB);
+        }
+
         return circuitBreakerFactory.create("messageService").run(() -> {
 
-            log.info("Начало обработки сообщения: {}", messageRequest.getContent());
-            Message message = mapperMessage.mapperMessageRequestDto(messageRequest);
-
             try {
+                log.info("Начало обработки сообщения: {}", messageRequest.getId());
+                Message message = mapperMessage.mapperMessageRequestToMessage(messageRequest);
                 kafkaMessageProducer.sendMessageRequest(messageRequest);
                 log.info("Отправка входящего сообщения в Kafka. ID сообщения: {}", messageRequest.getId());
 
-                MessageStatus[] statuses = MessageStatus.values();
-                Message messageByStatus = null;
+                //логика обработки сообщения
+                Thread.sleep(50);
+                message.setStatus(MessageStatus.PROCESSED);
+                message.setProcessedAt(Instant.now());
+                messageRepository.save(message);
+                log.info("Сохранение успешно обработанного сообщения в базу данных с ID: {} статус: {}",
+                        message.getId(), message.getStatus());
 
-                for (int i = 0; i < statuses.length - 1; i++) {
-                    messageByStatus = Message.builder().id(message.getId())
-                            .content(message.getContent())
-                            .status(statuses[i])
-                            .timestamp(message.getTimestamp())
-                            .processedAt(Instant.now())
-                            .build();
-                    //логика обработки сообщения
-                    Thread.sleep(50);
-                    messageRepository.save(messageByStatus);
-                    log.info("Сохранение сообщения ID: {} статус: {}", messageByStatus.getId(), messageByStatus.getStatus());
-                }
-                MessageResponse messageResponse = mapperMessage.mapperMessage(messageByStatus);
+                MessageResponse messageResponse = mapperMessage.mapperMessageToMessageResponse(message);
                 kafkaMessageProducer.sendMessageResponse(messageResponse);
-                log.info("Отправлен ответ на сообщение в Kafka для ID: {}, статус {}", messageResponse.getMessageId(),
+                log.info("Отправка успешно обработанного сообщения в Kafka с ID: {}, статус {}", messageResponse.getMessageId(),
                         messageResponse.getStatus());
                 return messageResponse;
 
             } catch (Exception e) {
-                log.error("Ошибка обработки сообщения ID: {}. Причина: {}",
-                        message.getId(), e.getMessage(), e);
-                return messageSaveInError.messageSaveInError(message);
+                log.error("Ошибка обработки сообщения с ID: {}. Причина: {}", messageRequest.getId(), e.getMessage(), e);
+                return messageSaveInError.messageSaveInError(messageRequest);
             }
         }, throwable -> {
             log.error("Автоматический выключатель, срабатывающий для сохранения сообщения," +
                     " метод {}: {}", "saveMessage", throwable.getMessage());
-            return messageSaveInError.messageSaveInError(mapperMessage.mapperMessageRequestDto(messageRequest));
+            return messageSaveInError.messageSaveInError(messageRequest);
         });
     }
 
@@ -94,7 +98,7 @@ public class MessageServiceImpl implements MessageService {
 
         return circuitBreakerFactory.create("messageService").run(() -> {
 
-            List<MessageResponse> allMessage = mapperMessage.getAllMessage(messageRepository.findAll());
+            List<MessageResponse> allMessage = mapperMessage.getAllMessageResponse(messageRepository.findAll());
             if (!allMessage.isEmpty()) {
                 log.info("Найдено {} сообщений", allMessage.size());
                 return allMessage;
@@ -118,10 +122,10 @@ public class MessageServiceImpl implements MessageService {
 
             Message message = messageRepository.findById(idMessage).orElseThrow(() ->
                     new MessageNotFoundById(MESSAGE_NOT_FOUND_BY_ID));
-            log.info("Найдено сообщение ID: {}, контент {}, со статусом: {}", idMessage,
+            log.info("Найдено сообщение с ID: {}, контент {}, со статусом: {}", idMessage,
                     message.getContent(),
                     message.getStatus());
-            return mapperMessage.mapperMessage(message);
+            return mapperMessage.mapperMessageToMessageResponse(message);
         }, throwable -> {
             log.error("Автоматический выключатель, срабатывающий для получения сообщений по ID," +
                     " метод {} : {}", "getMessageByID", throwable.getMessage());

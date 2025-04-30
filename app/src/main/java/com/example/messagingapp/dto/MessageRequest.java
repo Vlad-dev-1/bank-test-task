@@ -17,7 +17,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Schema(description = "Запрос для создания сообщения")
+@Schema(description = "Запрос для обработки сообщения")
 public class MessageRequest {
 
     @Schema(description = "Уникальный идентификатор сообщения",
@@ -28,7 +28,7 @@ public class MessageRequest {
     @Schema(description = "Текст сообщения",
             example = "Пример текста сообщения")
     @NotBlank(message = "Текст сообщения не может быть пустым")
-    @Size(min = 1, max = 2000, message = "Длина сообщения должна быть от 1 до 2000 символов")
+    @Size(min = 1, max = 3000, message = "Длина сообщения должна быть от 1 до 3000 символов")
     private String content;
 
     @Schema(description = "Временная метка создания",
