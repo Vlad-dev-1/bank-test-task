@@ -15,7 +15,18 @@ spring:
     date-format: yyyy-MM-dd'T'HH:mm:ss'Z'  # Формат даты для JSON
     time-zone: UTC  # Часовой пояс UTC
   kafka:
-    bootstrap-servers: ${app.kafka.bootstrap-servers}  # Адреса Kafka брокеров (берётся из переменной)
+    bootstrap-servers: kafka1:9092,kafka2:9093,kafka3:9094  # Адреса Kafka брокеров (берётся из переменной)
+    topics:
+      inputTopic:
+        name: input-messages  # Название топика Kafka для входящих сообщений
+        partitions: 3  # Количество партиций по умолчанию
+        replicas: 3  # Фактор репликации по умолчанию
+        min-insync-replicas: 1  # Минимальное количество синхронизированных реплик
+      outputTopic:
+        name: output-messages  # Название топика Kafka для исходящих сообщений
+        partitions: 3
+        replicas: 3
+        min-insync-replicas: 1
     listener:
       retry:
         interval: 1000  # Интервал между попытками повтора (1 сек)
@@ -29,9 +40,13 @@ spring:
         spring.json.type.mapping: >-  # Маппинг типов для десериализации
           request:com.example.messagingapp.dto.MessageRequest,
           response:com.example.messagingapp.dto.MessageResponse
+      isolation-level: read_committed  #Читает только закоммиченные сообщения
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer  # Сериализатор ключа
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer  # Сериализатор значения
+      acks: all  #Гарантирует запись во все реплики
+      retries: 3  #Автоматические повторы при ошибках
+      enable-idempotence: true  #Предотвращает дублирование сообщений
   flyway:
     enabled: true  # Включение Flyway
     user: postgres  # Пользователь БД для Flyway
@@ -52,12 +67,6 @@ spring:
         format_sql: true  # Форматирование SQL в логах
     show-sql: true  # Показывать SQL в логах
 
-app:
-  kafka:
-    input-topic: input-messages  # Название входного топике Kafka
-    output-topic: output-messages  # Название выходного топика Kafka
-    bootstrap-servers: kafka1:9092,kafka2:9093,kafka3:9094  # Адреса Kafka брокеров
-
 springdoc:
   swagger-ui:
     path: /swagger-ui.html  # Путь к Swagger UI
@@ -68,7 +77,6 @@ springdoc:
     path: /api-docs  # Путь к OpenAPI спецификации
     version: openapi_3_1  # Версия OpenAPI
 
-
 logging:
   level:
     org.springframework.cache: TRACE  # Уровень логирования для кэша
@@ -77,12 +85,12 @@ logging:
     root: INFO  # Общий уровень логирования
     org.springframework: INFO  # Уровень логирования Spring
     org.apache.kafka: INFO  # Уровень логирования Kafka
-    com.example.messagingapp: INFO  # Уровень логирования вашего приложения
+    com.example.messagingapp: INFO  # Уровень логирования приложения
   file:
     name: app/logs/application.log  # Путь к файлу логов
   pattern:
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"  # Формат логов в файле
-    console: "%d{HH:mm:ss} %-5level %logger{36} - %msg%n"  # Формат логов в консоли
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"  # Формат логов в консоли
 
 resilience4j:
   circuitbreaker:
@@ -98,7 +106,7 @@ resilience4j:
         slidingWindowSize: 10           # Размер окна мониторинга
         # Минимальное количество вызовов перед активацией CB:
         # Circuit Breaker начнет работать только после 5 вызовов
-        minimumNumberOfCalls: 5         # Минимум вызовов перед анализом
+        minimumNumberOfCalls: 5         # Минимум вызовов для анализа
         # Автопереход из состояния OPEN (разомкнуто) в HALF_OPEN (полуразомкнуто)
         automaticTransitionFromOpenToHalfOpenEnabled: true
         # Время в открытом состоянии:
@@ -124,9 +132,15 @@ resilience4j:
         recordExceptions:  # Общие ошибки сервиса
           - org.springframework.dao.DataAccessException  # Ошибки доступа к данным
           - java.lang.RuntimeException  # Все runtime ошибки
+        ignore-exceptions:
+          - com.example.messagingapp.exception.MessageExistsToDataBase
+          - com.example.messagingapp.exception.MessagesNotFound
+          - com.example.messagingapp.exception.MessageNotFoundById
 
       messageStatisticService:
         baseConfig: default
         recordExceptions:  # Ошибки статистики
           - org.springframework.dao.DataAccessException # Ошибки доступа к данным
           - java.lang.RuntimeException  # Все runtime ошибки
+        ignore-exceptions:
+          - com.example.messagingapp.exception.MessageStatisticIsEmpty

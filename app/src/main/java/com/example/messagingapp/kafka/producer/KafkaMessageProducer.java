@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JCircuitBreakerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletableFuture;
@@ -24,13 +25,14 @@ public class KafkaMessageProducer {
 
     private static final String SEND_SUCCESS_MESSAGE_TOPIC = "Сообщение успешно отправлено." +
             " Топик: {}, Ключ: {}, Партиция: {}, Оффсет: {}";
-    private static final String SEND_ERROR_MESSAGE_TOPIC = "Ошибка при отправке в Kafka (до срабатывания CB)." +
-            " Топик: {}, Ключ: {}";
 
-    @Value("${app.kafka.input-topic}")
+    private static final String SEND_ERROR_FORMAT = "Сработал Circuit Breaker при отправке в Kafka." +
+            " Ошибка отправки сообщения в Kafka Топик: {}, Ключ: {}. Причина: {}";
+
+    @Value("${spring.kafka.topics.inputTopic.name}")
     private String inputTopic;
 
-    @Value("${app.kafka.output-topic}")
+    @Value("${spring.kafka.topics.outputTopic.name}")
     private String outputTopic;
 
     private final KafkaTemplate<String, Object> requestMessageKafkaTemplate;
@@ -54,22 +56,16 @@ public class KafkaMessageProducer {
                                                            Object message) {
 
         return circuitBreakerFactory.create("kafkaProducer").run(() ->
-                        kafkaTemplate.send(topic, key, message)
-                                .thenApply(result -> {
-                                    log.info(SEND_SUCCESS_MESSAGE_TOPIC,
-                                            topic,
-                                            key,
-                                            result.getRecordMetadata().partition(),
-                                            result.getRecordMetadata().offset());
-                                    return (Void) null;
-                                })
-                                .exceptionally(ex -> {
-                                    log.error(SEND_ERROR_MESSAGE_TOPIC, topic, key, ex);
-                                    throw new KafkaSendException(FAILED_SEND_KAFKA);
-                                }),
-                throwable -> {
-                    log.error("Сработал Circuit Breaker при отправке в Kafka. Топик: {}, Ключ: {}. Причина: {}",
-                            topic, key, throwable.getMessage());
+                {
+                    CompletableFuture<SendResult<String, Object>> sendResultCompletableFuture = kafkaTemplate
+                            .send(topic, 0, key, message);
+                    return sendResultCompletableFuture
+                            .thenAccept(result -> log.info(SEND_SUCCESS_MESSAGE_TOPIC, topic, key,
+                                    result.getRecordMetadata().partition(),
+                                    result.getRecordMetadata().offset()));
+                },
+                exception -> {
+                    log.error(SEND_ERROR_FORMAT, topic, key, exception.getMessage(), exception);
                     throw new KafkaSendException(FAILED_SEND_KAFKA);
                 });
     }

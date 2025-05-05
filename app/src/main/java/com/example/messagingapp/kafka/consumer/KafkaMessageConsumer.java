@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 public class KafkaMessageConsumer {
 
     @KafkaListener(
-            topics = "${app.kafka.input-topic}",
+            topics = "${spring.kafka.topics.inputTopic.name}",
             groupId = "${spring.kafka.consumer.group-id}",
             properties = "metadata.max.age.ms=10000"  // Чаще обновлять метаданные о брокерах
     )
@@ -37,7 +37,7 @@ public class KafkaMessageConsumer {
     }
 
     @KafkaListener(
-            topics = "${app.kafka.output-topic}",
+            topics = "${spring.kafka.topics.outputTopic.name}",
             groupId = "${spring.kafka.consumer.group-id}",
             properties = "metadata.max.age.ms=10000"  // Чаще обновлять метаданные о брокерах
     )

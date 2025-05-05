@@ -102,6 +102,7 @@ services:
     image: provectuslabs/kafka-ui:latest  # Веб-интерфейс для Kafka
     container_name: kafka-ui  # Имя контейнера
     depends_on:
+      - zookeeper
       - kafka1
       - kafka2
       - kafka3  # Зависимости от брокеров

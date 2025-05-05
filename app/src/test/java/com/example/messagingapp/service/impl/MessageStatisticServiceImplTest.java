@@ -3,7 +3,9 @@ package com.example.messagingapp.service.impl;
 import com.example.messagingapp.dto.MessageStatisticResponse;
 import com.example.messagingapp.entity.Message;
 import com.example.messagingapp.entity.MessageStatus;
+import com.example.messagingapp.exception.MessageStatisticIsEmpty;
 import com.example.messagingapp.repository.MessageRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,6 +35,11 @@ class MessageStatisticServiceImplTest {
     @InjectMocks
     private MessageStatisticServiceImpl messageStatisticService;
 
+    @BeforeEach
+    void setUp() {
+        when(circuitBreakerFactory.create(anyString())).thenReturn(circuitBreaker);
+    }
+
     @Test
     void getMessageStatistic_ShouldReturnStatistics() {
 
@@ -46,7 +53,6 @@ class MessageStatisticServiceImplTest {
         message3.setStatus(MessageStatus.PROCESSED);
 
         when(messageRepository.findAll()).thenReturn(List.of(message1, message2, message3));
-        when(circuitBreakerFactory.create("messageStatisticService")).thenReturn(circuitBreaker);
         when(circuitBreaker.run(any(), any())).thenAnswer(invocation -> {
             // Получаем и выполняем supplier из первого аргумента
             return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
@@ -57,6 +63,19 @@ class MessageStatisticServiceImplTest {
 
         assertEquals(2, result.getStatisticMessages().get("PROCESSED"));
         assertEquals(1, result.getStatisticMessages().get("FAILED"));
-        verify(messageRepository,times(1)).findAll();
+        verify(messageRepository, times(1)).findAll();
+    }
+
+    @Test
+    void getMessageStatistic_ShouldReturnThrowWhenEmpty() {
+
+        when(messageRepository.findAll()).thenReturn(List.of());
+        when(circuitBreaker.run(any(), any())).thenAnswer(invocation -> {
+            // Получаем и выполняем supplier из первого аргумента
+            return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get(); // выбросит исключение
+        });
+
+        assertThrows(MessageStatisticIsEmpty.class, () -> messageStatisticService.getMessageStatistic());
+        verify(messageRepository, times(1)).findAll();
     }
 }

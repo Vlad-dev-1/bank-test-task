@@ -61,6 +61,7 @@ class MessageSaveInErrorTest {
                 .build();
 
         when(mapperMessage.mapperMessageRequestToMessage(request)).thenReturn(message);
+        when(messageRepository.save(message)).thenReturn(message);
         when(mapperMessage.mapperMessageToMessageResponse(message)).thenReturn(response);
 
         MessageResponse result = messageSaveInError.messageSaveInError(request);

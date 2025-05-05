@@ -67,6 +67,7 @@ class MessageServiceImplTest {
         MessageResponse response = new MessageResponse();
 
         when(messageRepository.findMessageById(request.getId())).thenReturn(Optional.empty());
+        when(messageRepository.save(message)).thenReturn(message);
         when(mapperMessage.mapperMessageRequestToMessage(request)).thenReturn(message);
         when(mapperMessage.mapperMessageToMessageResponse(message)).thenReturn(response);
 
@@ -85,6 +86,29 @@ class MessageServiceImplTest {
         verify(kafkaMessageProducer,times(1)).sendMessageRequest(request);
         verify(kafkaMessageProducer,times(1)).sendMessageResponse(response);
 
+    }
+
+    @Test
+    void saveMessage_ShouldThrowWhenMessageIsPresent() {
+
+        UUID id = UUID.randomUUID();
+
+        MessageRequest messageRequest = new MessageRequest();
+        messageRequest.setId(id);
+
+        Message message = new Message();
+        message.setId(id);
+        message.setStatus(MessageStatus.PROCESSED);
+
+        when(messageRepository.findMessageById(id)).thenReturn(Optional.of(message));
+        when(circuitBreaker.run(any(Supplier.class), any(Function.class)))
+                .thenAnswer(invocation -> {
+                    Supplier<MessageResponse> supplier = invocation.getArgument(0);
+                    return supplier.get();
+                });
+
+        assertThrows(MessageExistsToDataBase.class, ()-> messageService.saveMessage(messageRequest));
+        verify(messageRepository,times(1)).findMessageById(id);
     }
 
     @Test

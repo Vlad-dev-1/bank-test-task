@@ -28,19 +28,20 @@ public class MessageSaveInError {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public MessageResponse messageSaveInError(MessageRequest messageRequest) {
-        log.warn("Попытка сохранения не обработанного сообщения в статусе FAILED. ID: {}, время получения {}",
+        log.warn("Попытка сохранения входящего не обработанного сообщения в статусе FAILED." +
+                        " ID: {}, время получения {}",
                 messageRequest.getId(), messageRequest.getTimestamp());
         Message message = mapperMessage.mapperMessageRequestToMessage(messageRequest);
         message.setStatus(MessageStatus.FAILED);
         message.setProcessedAt(Instant.now());
-        messageRepository.save(message);
-        log.info("Не обработанное сообщение сохранено с ID: {}, статус: {}", message.getId(), message.getStatus());
+        Message saveMessage = messageRepository.save(message);
+        log.info("Не обработанное сообщение сохранено с ID: {}, статус: {}",
+                saveMessage.getId(), saveMessage.getStatus());
 
-        MessageResponse messageResponse = mapperMessage.mapperMessageToMessageResponse(message);
+        MessageResponse messageResponse = mapperMessage.mapperMessageToMessageResponse(saveMessage);
         kafkaMessageProducer.sendMessageResponse(messageResponse);
         log.info("Не обработанное сообщение отправлено в Kafka. ID сообщения: {}, статус {}",
-                messageResponse.getMessageId(),
-                messageResponse.getStatus());
+                messageResponse.getMessageId(), messageResponse.getStatus());
         return messageResponse;
     }
 }

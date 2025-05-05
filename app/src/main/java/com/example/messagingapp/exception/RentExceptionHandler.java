@@ -42,7 +42,10 @@ public class RentExceptionHandler {
     @ExceptionHandler({MessagesNotFound.class,
             MessageNotFoundById.class,
             KafkaSendException.class,
-            MessageStatisticResponseException.class})
+            MessageStatisticIsEmpty.class,
+            MessagesGetException.class,
+            MessageGetByIDException.class,
+            MessageStatisticException.class})
     public ResponseEntity<ErrorResponceApp> handleNotFoundException(RuntimeException e) {
         return buildErrorResponseEntity(e.getMessage());
     }
