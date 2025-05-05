@@ -66,8 +66,8 @@ class MessageSaveInErrorTest {
 
         MessageResponse result = messageSaveInError.messageSaveInError(request);
 
-        assertEquals(message.getStatus(), result.getStatus());
-        assertNotNull(message.getProcessedAt());
+        assertEquals(response.getStatus(), result.getStatus());
+        assertNotNull(result.getProcessedAt());
         assertEquals(response, result);
         verify(messageRepository, times(1)).save(message);
         verify(kafkaMessageProducer, times(1)).sendMessageResponse(response);

@@ -67,7 +67,7 @@ class MessageStatisticServiceImplTest {
     }
 
     @Test
-    void getMessageStatistic_ShouldReturnThrowWhenEmpty() {
+    void getMessageStatistic_ShouldThrowWhenEmpty() {
 
         when(messageRepository.findAll()).thenReturn(List.of());
         when(circuitBreaker.run(any(), any())).thenAnswer(invocation -> {

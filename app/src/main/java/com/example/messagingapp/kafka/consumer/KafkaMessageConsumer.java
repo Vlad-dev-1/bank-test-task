@@ -33,7 +33,7 @@ public class KafkaMessageConsumer {
                                   @Header(KafkaHeaders.RECEIVED_KEY) String key,
                                   @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
                                   @Header(KafkaHeaders.RECEIVED_PARTITION) int partition) {
-        processMessage(message, key, topic, partition, "MessageRequest");
+        MessageRequest messageRequest = processMessage(message, key, topic, partition, "MessageRequest");
     }
 
     @KafkaListener(
@@ -50,25 +50,29 @@ public class KafkaMessageConsumer {
                                    @Header(KafkaHeaders.RECEIVED_KEY) String key,
                                    @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
                                    @Header(KafkaHeaders.RECEIVED_PARTITION) int partition) {
-        processMessage(message, key, topic, partition, "MessageResponse");
+        MessageResponse messageResponse = processMessage(message, key, topic, partition, "MessageResponse");
     }
 
-    public  <T> void processMessage(T message, String key, String topic, int partition, String messageType) {
+    public  <T> T processMessage(T message, String key, String topic, int partition, String messageType) {
         try {
             if (message == null) {
                 log.warn("Получено пустое сообщение (ключ: {}) типа {} из топика {}, партиция {}",
                         key, messageType, topic, partition);
-                return;
+                return null;
             }
             log.info("Получено сообщение (ключ: {}) типа {} из топика {}, партиция {}: {}",
                     key, messageType, topic, partition, message);
+            return message;
 
         } catch (SerializationException e) {
-            log.error("Ошибка десериализации {} (партиция {}): {}", messageType, partition, e.getMessage());
+            log.error("Ошибка десериализации {} (партиция {}): {}", messageType, partition, e.getMessage(), e);
+            return null;
         } catch (KafkaException e) {
-            log.error("Ошибка Kafka при обработке {} (партиция {}): {}", messageType, partition, e.getMessage());
+            log.error("Ошибка Kafka при обработке {} (партиция {}): {}", messageType, partition, e.getMessage(), e);
+            return null;
         } catch (Exception e) {
             log.error("Неожиданная ошибка при обработке {} (партиция {}): {}", messageType, partition, e.getMessage(), e);
+            return null;
         }
     }
 }
