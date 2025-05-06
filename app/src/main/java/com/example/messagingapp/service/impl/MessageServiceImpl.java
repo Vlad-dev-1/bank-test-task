@@ -45,7 +45,7 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     @Transactional
-    @CacheEvict(cacheNames = "messages", allEntries = true)
+    @CacheEvict(cacheNames = "messages_cache", allEntries = true)
     public MessageResponse saveMessage(MessageRequest messageRequest) {
 
         return circuitBreakerFactory.create("messageService").run(() -> {
@@ -95,7 +95,7 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(cacheNames = "messages", unless = "#result == null")
+    @Cacheable(cacheNames = "messages_cache", unless = "#result == null")
     public List<MessageResponse> getMessages() {
 
         return circuitBreakerFactory.create("messageService").run(() -> {
@@ -120,7 +120,7 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(cacheNames = "messages", key = "#idMessage", unless = "#result == null")
+    @Cacheable(cacheNames = "messages_cache", key = "#idMessage", unless = "#result == null")
     public MessageResponse getMessageByID(UUID idMessage) {
 
         return circuitBreakerFactory.create("messageService").run(() -> {

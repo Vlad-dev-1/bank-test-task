@@ -124,7 +124,7 @@ services:
     environment:
       POSTGRES_USER: postgres  # Логин
       POSTGRES_PASSWORD: postgres  # Пароль
-      POSTGRES_DB: postgres  # Имя БД
+      POSTGRES_DB: messagedb  # Имя БД
     volumes:
       - postgres-data:/var/lib/postgresql/data  # Том для хранения данных
     networks:
@@ -145,10 +145,10 @@ services:
       - kafka3
       - postgres  # Зависимости от других сервисов
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres  # URL БД
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/messagedb  # URL БД
       SPRING_DATASOURCE_USERNAME: postgres  # Логин БД
       SPRING_DATASOURCE_PASSWORD: postgres  # Пароль БД
-      SPRING_FLYWAY_URL: jdbc:postgresql://postgres:5432/postgres  # URL для Flyway
+      SPRING_FLYWAY_URL: jdbc:postgresql://postgres:5432/messagedb  # URL для Flyway
       SPRING_FLYWAY_USER: postgres  # Логин Flyway
       SPRING_FLYWAY_PASSWORD: postgres  # Пароль Flyway
       SPRING_KAFKA_BOOTSTRAP-SERVERS: kafka1:9092,kafka2:9093,kafka3:9094  # Адреса Kafka брокеров

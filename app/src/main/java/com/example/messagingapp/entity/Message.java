@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "message_info", schema = "public")
+@Table(name = "messages", schema = "public")
 @Getter
 @Setter
 @NoArgsConstructor

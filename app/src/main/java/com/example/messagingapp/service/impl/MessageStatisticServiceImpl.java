@@ -29,7 +29,7 @@ public class MessageStatisticServiceImpl implements MessageStatisticService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(cacheNames = "messages", key = "'statistics'", unless = "#result == null")
+    @Cacheable(cacheNames = "messages_cache", key = "'statistics'", unless = "#result == null")
     public MessageStatisticResponse getMessageStatistic() {
 
         return circuitBreakerFactory.create("messageStatisticService").run(() -> {

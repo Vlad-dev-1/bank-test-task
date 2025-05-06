@@ -10,7 +10,7 @@ spring:
       # - expireAfterWrite=5m: время жизни записи после создания/обновления (5 минут)
       # - recordStats: включение сбора статистики использования кэша
       spec: maximumSize=1000, expireAfterWrite=5m, recordStats
-    cache-names: messages
+    cache-names: messages_cache
   jackson:
     date-format: yyyy-MM-dd'T'HH:mm:ss'Z'  # Формат даты для JSON
     time-zone: UTC  # Часовой пояс UTC
@@ -51,10 +51,10 @@ spring:
     enabled: true  # Включение Flyway
     user: postgres  # Пользователь БД для Flyway
     password: postgres  # Пароль для Flyway
-    url: jdbc:postgresql://postgres:5432/postgres  # URL БД для Flyway
+    url: jdbc:postgresql://postgres:5432/messagedb  # URL БД для Flyway
     locations: classpath:db/migration  # Расположение миграций
   datasource:
-    url: jdbc:postgresql://postgres:5432/postgres  # URL основной БД
+    url: jdbc:postgresql://postgres:5432/messagedb  # URL основной БД
     username: postgres  # Пользователь основной БД
     password: postgres  # Пароль основной БД
     driver-class-name: org.postgresql.Driver  # Драйвер PostgreSQL
