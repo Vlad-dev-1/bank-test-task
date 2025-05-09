@@ -28,7 +28,7 @@ public class RentExceptionHandler {
                 .collect(Collectors.toList());
 
         ValidationErrorResponse response = new ValidationErrorResponse(
-                "Validation failed",
+                "Ошибка валидации данных",
                 Instant.now(),
                 errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
@@ -46,11 +46,7 @@ public class RentExceptionHandler {
             MessagesGetException.class,
             MessageGetByIDException.class,
             MessageStatisticException.class})
-    public ResponseEntity<ErrorResponceApp> handleNotFoundException(RuntimeException e) {
-        return buildErrorResponseEntity(e.getMessage());
-    }
-
-    private ResponseEntity<ErrorResponceApp> buildErrorResponseEntity(String message) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponceApp(message));
+    public ResponseEntity<String> handleNotFoundException(RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
 }
