@@ -14,7 +14,7 @@
 * **Docker & Docker Compose** - для контейнеризации и оркестрации
 
 ## Инструкция по запуску проекта
-1. Клонирование репозитория:   git clone https://github.com/Vlad-dev-1/bank-test-task.git
+1. Клонирование репозитория:   git clone https://github.com/vladimir-it-dev/bank-test-task.git
 2. Запуск сервисов через Docker:   docker compose up -d
 3. Все эндпоинты доступны через Swagger UI:   http://localhost:8080/swagger-ui.html
 4. Используйте curl, Postman или любой другой HTTP-клиент для отправки и получения сообщений
